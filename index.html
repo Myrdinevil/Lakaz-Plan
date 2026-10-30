@@ -1416,7 +1416,9 @@ async function projectsModal() {
   modal(`<button class="close" data-act="closeModal">✕</button><h2>${L('Mes relevés')}</h2>
   <div class="row" style="margin-bottom:10px"><button class="btn pri" data-act="newProject">＋ ${L('Nouveau relevé')}</button><button class="btn" data-act="importProject">📂 ${L('Ouvrir un fichier projet')}</button></div>
   ${list.map(p => `<div class="card row" style="justify-content:space-between"><div><b>${esc(p.name)}</b><div class="hint" style="margin:0">${esc(p.address || '')} · ${L('modifié le {d}', { d: dateStr(p.updated) })} · ${L('{n} pièces', { n: p.levels.reduce((n, Lv) => n + Lv.rooms.length, 0) })}</div></div>
-  <div class="row">${p.id === app.project.id ? `<span class="badge b-ok">${L('ouvert')}</span>` : `<button class="btn sm" data-act="openProj" data-id="${p.id}">${L('Ouvrir')}</button>`}<button class="btn sm warn" data-act="delProj" data-id="${p.id}">${L('Supprimer')}</button></div></div>`).join('')}`);
+  <div class="row">${p.id === app.project.id ? `<span class="badge b-ok">${L('ouvert')}</span>` : `<button class="btn sm" data-act="openProj" data-id="${p.id}">${L('Ouvrir')}</button>`}<button class="btn sm warn" data-act="delProj" data-id="${p.id}">${L('Supprimer')}</button></div></div>`).join('')}
+  <h4>${L('Remise à zéro')}</h4><p class="hint">${L("Supprime tous les relevés de cet appareil pour repartir d'une application neuve. Sauvegardez d'abord les fichiers projet que vous voulez garder.")}</p>
+  <button class="btn sm warn" data-act="wipeAll">🗑️ ${L('Tout effacer sur cet appareil')}</button>`);
 }
 function projInfoModal() {
   const P = app.project, f = (k, l, ph = '') => `<label class="field"><span>${l}</span><input data-in="proj" data-k="${k}" value="${esc(P[k])}" placeholder="${esc(ph)}"></label>`;
@@ -1482,7 +1484,7 @@ let toastT = null;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3800); }
 function menu() {
   const m = $('#menuPop'); if (!m.classList.contains('hidden')) return m.classList.add('hidden');
-  m.innerHTML = `<button data-act="projects">📁 ${L('Mes relevés')}</button><button data-act="projInfo">📝 ${L('Informations du projet')}</button><hr>
+  m.innerHTML = `<button data-act="newProject">＋ ${L('Nouveau relevé')}</button><button data-act="projects">📁 ${L('Mes relevés')}</button><button data-act="projInfo">📝 ${L('Informations du projet')}</button><button data-act="resetProject">🧹 ${L('Vider ce relevé')}</button><hr>
   <button data-act="exportProject">💾 ${L('Sauvegarder le fichier projet')}</button><button data-act="importProject">📂 ${L('Ouvrir un fichier projet')}</button><hr>
   <button data-act="tab" data-v="rapport">🖨️ ${L('Rapport PDF')}</button><button data-act="exportCSV">📊 ${L('Métrés pour Excel (CSV)')}</button><button data-act="exportSVG">📐 ${L('Plan en SVG (1:100)')}</button><hr>
   <button data-act="langModal">🌐 ${LANG === 'fr' ? 'Langue : Français' : 'Language: English'}</button><button data-act="settings">✨ ${L('Réglages IA')}</button><button data-act="help">❓ ${L("Mode d'emploi")}</button>`;
@@ -1555,7 +1557,21 @@ const ACT = {
   exportCSV: () => { hideMenu(); exportCSV(); },
   exportSVG: () => { hideMenu(); exportSVG(); },
   print: () => { renderReportView(); setTimeout(() => window.print(), 300); },
-  newProject: async () => { const n = prompt(L('Nom du nouveau relevé :'), L('Relevé {d}', { d: dateStr(Date.now()) })); if (!n) return; const P = newProject(n); await DB.put(P); closeModal(); openProject(P); },
+  resetProject: () => {
+    hideMenu(); const P = app.project;
+    if (!confirm(L('Vider « {n} » ?\nToutes les pièces, ouvertures, désordres, photos et niveaux seront effacés. Le nom et l\'adresse du projet sont conservés.\nVous pourrez revenir en arrière avec ↶.', { n: P.name }))) return;
+    app.sel = null; app.trace = null; app.calib = null; app.panelMode = null; app.tool = 'select'; app.ai.result = null;
+    mutate(() => { P.levels = [newLevel(L('Rez-de-chaussée'))]; app.levelIdx = 0; });
+    fitView(); toast(L('Relevé vidé. Vous repartez de zéro.'));
+  },
+  wipeAll: async () => {
+    if (!confirm(L('Supprimer TOUS les relevés de cet appareil ?\nLes fichiers projet déjà sauvegardés ne sont pas touchés.'))) return;
+    if (!confirm(L('Dernière confirmation : cette suppression est définitive. Continuer ?'))) return;
+    for (const p of await DB.all()) await DB.del(p.id);
+    const P = newProject(L('Mon premier relevé')); await DB.put(P); closeModal(); openProject(P);
+    toast(L('Application remise à zéro.'));
+  },
+  newProject: async () => { hideMenu(); const n = prompt(L('Nom du nouveau relevé :'), L('Relevé {d}', { d: dateStr(Date.now()) })); if (!n) return; const P = newProject(n); await DB.put(P); closeModal(); openProject(P); },
   openProj: async el => { const P = await DB.get(el.dataset.id); closeModal(); if (P) openProject(P); },
   delProj: async el => {
     const P = await DB.get(el.dataset.id); if (!P || !confirm(L('Supprimer définitivement « {n} » de cet appareil ?\n(Pensez à sauvegarder le fichier projet avant.)', { n: P.name }))) return;
@@ -1797,6 +1813,15 @@ const EN = {
   'Supprimer définitivement « {n} » de cet appareil ?\n(Pensez à sauvegarder le fichier projet avant.)': 'Permanently delete "{n}" from this device?\n(Remember to save the project file first.)',
   'Valeur lue en centimètres : {v} m': 'Value read as centimetres: {v} m', 'Stockage local indisponible : sauvegardez le fichier projet avant de fermer la page.': 'Local storage unavailable: save the project file before closing the page.',
   'Mon premier relevé': 'My first survey',
+  // remise à zéro
+  'Vider ce relevé': 'Clear this survey', 'Remise à zéro': 'Reset',
+  "Supprime tous les relevés de cet appareil pour repartir d'une application neuve. Sauvegardez d'abord les fichiers projet que vous voulez garder.": 'Deletes every survey on this device so you can start again with a fresh app. Save the project files you want to keep first.',
+  'Tout effacer sur cet appareil': 'Erase everything on this device',
+  "Vider « {n} » ?\nToutes les pièces, ouvertures, désordres, photos et niveaux seront effacés. Le nom et l'adresse du projet sont conservés.\nVous pourrez revenir en arrière avec ↶.": 'Clear "{n}"?\nAll rooms, openings, defects, photos and levels will be erased. The project name and address are kept.\nYou can go back with ↶.',
+  'Relevé vidé. Vous repartez de zéro.': 'Survey cleared. You are starting from scratch.',
+  'Supprimer TOUS les relevés de cet appareil ?\nLes fichiers projet déjà sauvegardés ne sont pas touchés.': 'Delete ALL surveys on this device?\nProject files you already saved are not affected.',
+  'Dernière confirmation : cette suppression est définitive. Continuer ?': 'Final confirmation: this cannot be undone. Continue?',
+  'Application remise à zéro.': 'App reset.',
 };
 
 // ---------- Démarrage ----------
