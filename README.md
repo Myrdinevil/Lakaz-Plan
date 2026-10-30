@@ -1,10 +1,14 @@
 # Lakaz Plan
 
+*[English version](README.en.md)*
+
 Relevé de bâtiments existants avant rénovation : plan coté, désordres avec photos, métrés et rapport PDF. Conçu pour des équipes non spécialistes qui travaillent sur le terrain aux Seychelles.
 
 **Ouvrir l'application : https://myrdinevil.github.io/Lakaz-Plan/**
 
 « Lakaz » veut dire « maison » en créole seychellois.
+
+L'application existe en français et en anglais. Elle suit la langue du téléphone, et on peut en changer à tout moment (Menu › Langue).
 
 ## À quoi ça sert
 
