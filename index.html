@@ -1,0 +1,1577 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lakaz Plan">
+<meta name="theme-color" content="#0f5d6b">
+<title>Lakaz Plan · relevé de bâtiment</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f5d6b'/%3E%3Cpath d='M14 34 32 18l18 16v16H14z' fill='none' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M28 50V38h8v12' fill='none' stroke='%23f2a541' stroke-width='4'/%3E%3C/svg%3E">
+<style>
+:root{
+  --brand:#0f5d6b; --brand2:#0b4652; --accent:#f2a541; --ink:#1d2528; --mut:#5f6d72;
+  --bg:#eef2f3; --panel:#ffffff; --line:#d6dfe2; --est:#c45f00; --ok:#1f8a4c; --bad:#c8312b;
+  --sel:#0a8ea3;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+#app{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh}
+/* --- En-tête --- */
+header{display:flex;align-items:center;gap:6px;padding:6px 10px;padding-top:max(6px,env(safe-area-inset-top));background:var(--brand);color:#fff;flex-wrap:wrap;position:relative;z-index:5}
+.brand{font-weight:700;letter-spacing:.2px;white-space:nowrap;margin-right:4px}
+.hbtn{background:rgba(255,255,255,.12);border:0;border-radius:8px;color:#fff;padding:6px 10px;min-height:36px;white-space:nowrap}
+.hbtn:hover{background:rgba(255,255,255,.22)}
+.pname{max-width:220px;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+#lvlSel{background:#fff;color:var(--ink);border:0;border-radius:8px;padding:6px 8px;min-height:36px;max-width:170px}
+.tabs{display:flex;background:rgba(0,0,0,.18);border-radius:10px;padding:3px;gap:2px}
+.tabs button{background:none;border:0;color:#d8eef1;padding:6px 12px;border-radius:8px;min-height:32px}
+.tabs button.on{background:#fff;color:var(--brand);font-weight:600}
+.sp{flex:1}
+/* --- Zone principale --- */
+main{position:relative;display:grid;grid-template-columns:1fr 370px;min-height:0}
+#stage{position:relative;overflow:hidden;background:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
+#plan{width:100%;height:100%;display:block}
+#plan.bgmode #gPlan{pointer-events:none}
+#plan.tool-door,#plan.tool-window,#plan.tool-defect,#plan.tool-trace{cursor:crosshair}
+#hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(29,37,40,.86);color:#fff;padding:7px 14px;border-radius:20px;font-size:13.5px;pointer-events:none;max-width:90%;text-align:center}
+#hint:empty{display:none}
+#toolbar{position:absolute;left:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+.tool{display:flex;flex-direction:column;align-items:center;justify-content:center;width:62px;min-height:54px;border:0;border-radius:10px;background:none;font-size:20px;line-height:1.1;padding:4px 2px}
+.tool small{font-size:10.5px;color:var(--mut);margin-top:2px}
+.tool:hover{background:var(--bg)}
+.tool.on{background:var(--brand);color:#fff}
+.tool.on small{color:#cfe9ed}
+#zoomCtl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:5px}
+#zoomCtl button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:18px}
+#scalebar{position:absolute;left:84px;bottom:10px;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px;pointer-events:none}
+#sbBar{height:6px;border:1.5px solid #333;border-top:0}
+#north{position:absolute;right:12px;bottom:12px;width:44px;height:44px;pointer-events:none}
+#empty{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.08);text-align:center}
+#empty h3{margin:0 0 6px}
+#empty p{margin:0 0 12px;color:var(--mut);font-size:14px}
+#empty .row{justify-content:center}
+/* --- Panneau latéral --- */
+#panel{overflow:auto;border-left:1px solid var(--line);background:var(--panel);padding:14px 14px 40px;-webkit-overflow-scrolling:touch}
+#panelHandle{display:none}
+#panel h3{margin:0 0 8px;font-size:17px}
+#panel h4{margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut)}
+.hint{color:var(--mut);font-size:13px;margin:4px 0 8px}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 12px;min-height:38px}
+.btn:hover{border-color:var(--brand)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.btn.pri:hover{background:var(--brand2)}
+.btn.warn{color:var(--bad);border-color:#efc5c2}
+.btn.sm{padding:4px 9px;min-height:30px;font-size:13px}
+.btn.full{width:100%}
+.btn:disabled{opacity:.45;cursor:default}
+.chip{border:1px solid var(--line);background:#fff;border-radius:16px;padding:3px 10px;font-size:13px}
+.chip:hover,.chip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.titleIn{font-size:18px;font-weight:700;border:1px solid transparent;border-radius:8px;padding:4px 6px;width:100%;background:var(--bg)}
+.titleIn:focus{border-color:var(--brand);outline:0;background:#fff}
+.mf{display:grid;grid-template-columns:1fr 92px auto;gap:4px 8px;align-items:center;padding:7px 8px;border-radius:10px;margin-bottom:4px;border:1px solid transparent}
+.mf.hl{border-color:var(--bad);background:#fff6f5}
+.mf .ml{font-size:14px;font-weight:600}
+.mf .ml small{display:block;font-weight:400;color:var(--mut);font-size:12px}
+.num{width:92px;text-align:right;border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:16px;background:#fff}
+.num:focus{outline:2px solid var(--sel);border-color:transparent}
+.st{font-size:11.5px;border-radius:10px;padding:2px 7px;white-space:nowrap}
+.st.ok{background:#e3f4ea;color:var(--ok)}
+.st.est{background:#fdf0e3;color:var(--est)}
+.field{display:block;margin:8px 0}
+.field>span{display:block;font-size:13px;color:var(--mut);margin-bottom:3px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;background:#fff;font-size:16px}
+.field textarea{min-height:70px;resize:vertical}
+.badge{display:inline-block;border-radius:10px;padding:3px 9px;font-size:12.5px;font-weight:600}
+.b-ok{background:#e3f4ea;color:var(--ok)}
+.b-est{background:#fdf0e3;color:var(--est)}
+.b-bad{background:#fde6e4;color:var(--bad)}
+.card{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;background:#fff}
+.msg{border-radius:10px;padding:8px 10px;font-size:13.5px;margin:8px 0}
+.msg.ok{background:#e3f4ea;color:#155f35}
+.msg.warn{background:#fdf0e3;color:#7a3c00}
+.msg.bad{background:#fde6e4;color:#8a1f1a}
+.msg.info{background:#e6f1f3;color:#0b4652}
+.schem{background:var(--bg);border-radius:12px;padding:4px;margin:6px 0}
+.schem svg{width:100%;height:190px;display:block}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;border:0;background:#fff;padding:7px 4px;font-size:13px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--brand);color:#fff}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap}
+.thumbs .th{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.thumbs img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.thumbs .th button{position:absolute;top:2px;right:2px;border:0;border-radius:50%;width:24px;height:24px;background:rgba(0,0,0,.6);color:#fff;font-size:13px;line-height:1}
+.todo li{margin:4px 0;cursor:pointer}
+.todo li:hover{text-decoration:underline}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.kpi div{background:var(--bg);border-radius:10px;padding:8px;text-align:center}
+.kpi b{display:block;font-size:18px}
+.kpi span{font-size:11.5px;color:var(--mut)}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-right-color:transparent;border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* --- Vues pleine page --- */
+#pageView{position:absolute;inset:0;overflow:auto;background:var(--bg);padding:16px;display:none;z-index:3;-webkit-overflow-scrolling:touch}
+.wrap{max-width:1100px;margin:0 auto}
+table.t{width:100%;border-collapse:collapse;background:#fff;font-size:14px}
+table.t th,table.t td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:right;vertical-align:top}
+table.t th{background:#f6f8f9;font-size:12.5px;color:var(--mut);font-weight:600}
+table.t td:first-child,table.t th:first-child,table.t .l{text-align:left}
+table.t tr.tot td{font-weight:700;background:#f6f8f9}
+.tblWrap{overflow:auto;border:1px solid var(--line);border-radius:12px;margin:8px 0 18px}
+.dcard{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:start;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0;cursor:pointer}
+.dnum{width:34px;height:34px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+.dcard img{width:70px;height:70px;object-fit:cover;border-radius:8px}
+/* --- Rapport / impression --- */
+#reportRoot .page{background:#fff;margin:0 auto 18px;box-shadow:0 2px 14px rgba(0,0,0,.12);padding:0;overflow:hidden;color:#111;font-size:10pt}
+#reportRoot .pin{padding:0}
+.rp-h{display:flex;justify-content:space-between;border-bottom:1.5px solid #111;padding-bottom:2mm;margin-bottom:3mm;font-size:9pt}
+.rp-h b{font-size:11pt}
+.plan-area{display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cart{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;border:1.2px solid #111;font-size:8.5pt;height:28mm}
+.cart>div{padding:1.5mm 2.5mm;border-right:1px solid #111;overflow:hidden}
+.cart>div:last-child{border-right:0;display:flex;gap:3mm;align-items:center}
+.cart b{font-size:10.5pt}
+.rp-t{width:100%;border-collapse:collapse;font-size:8.5pt}
+.rp-t th,.rp-t td{border:0.6px solid #999;padding:1.2mm 1.6mm;text-align:right;vertical-align:top}
+.rp-t th{background:#eee}
+.rp-t td.l,.rp-t th.l{text-align:left}
+.rp-t tr{break-inside:avoid}
+.rp-t img{height:28mm;max-width:40mm;object-fit:cover;margin:0 1mm 1mm 0}
+.rp-sec{margin:0 0 5mm}
+.rp-sec h2{font-size:12pt;margin:0 0 2mm}
+.flow{padding:0}
+@media screen{#reportRoot .page{padding:10mm!important;box-sizing:content-box}#reportRoot{overflow-x:auto}}
+/* --- Modale, menu, toast --- */
+#modal{position:fixed;inset:0;background:rgba(10,20,24,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:14px}
+#modal.hidden,#menuPop.hidden{display:none}
+.mbox{background:#fff;border-radius:16px;max-width:620px;width:100%;max-height:90vh;max-height:90dvh;overflow:auto;padding:18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.mbox h2{margin:0 0 10px}
+.mbox .close{float:right;border:0;background:var(--bg);border-radius:50%;width:34px;height:34px;font-size:16px}
+#menuPop{position:fixed;top:52px;right:10px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);z-index:40;padding:6px;min-width:250px}
+#menuPop button{display:block;width:100%;text-align:left;border:0;background:none;padding:10px 12px;border-radius:8px}
+#menuPop button:hover{background:var(--bg)}
+#menuPop hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#1d2528;color:#fff;padding:10px 16px;border-radius:12px;opacity:0;transition:.25s;z-index:60;pointer-events:none;max-width:90%;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%)}
+#viewer{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:70;display:flex;align-items:center;justify-content:center}
+#viewer img{max-width:96%;max-height:96%}
+/* --- Mobile --- */
+@media (max-width:820px){
+  header{gap:5px;padding:5px 8px}
+  .brand,.redo,.lbl{display:none}
+  .pname{flex:1;min-width:0;max-width:none}
+  #lvlSel{max-width:118px}
+  .hbtn{padding:6px 9px}
+  .tabs{order:10;width:100%;justify-content:space-between}
+  .tabs button{flex:1;padding:6px 4px;font-size:13.5px}
+  main{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  #panel{border-left:0;border-top:1px solid var(--line);max-height:46vh;max-height:46dvh;padding-top:4px;box-shadow:0 -6px 20px rgba(0,0,0,.08);z-index:4}
+  #panel.closed{max-height:52px;overflow:hidden}
+  #panelHandle{display:block;width:100%;border:0;background:none;padding:6px 0 8px;color:var(--mut);font-size:13px}
+  #panelHandle::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:#c5d0d3;margin:0 auto 4px}
+  #toolbar{flex-direction:row;left:8px;right:8px;top:auto;bottom:8px;transform:none;overflow-x:auto;padding:3px;gap:1px}
+  .tool{flex:1 1 0;width:auto;min-width:40px;min-height:50px;font-size:18px;padding:3px 0}
+  .tool small{font-size:9.5px}
+  #scalebar{left:10px;bottom:74px}
+  #north{bottom:74px}
+  #empty{top:40%}
+  #reportRoot{zoom:.42}
+}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #app,main,#pageView{display:block!important;position:static!important;height:auto!important;overflow:visible!important;padding:0!important;background:#fff!important}
+  header,#stage,#panel,.noprint,#toast,#modal,#menuPop{display:none!important}
+  #reportRoot .page{box-shadow:none;margin:0;break-after:page;page-break-after:always}
+  #reportRoot .page:last-child{break-after:auto;page-break-after:auto}
+}
+</style>
+<style id="pageStyle"></style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">🏝️ <b>Lakaz Plan</b></div>
+    <button class="hbtn pname" id="pname" data-act="projInfo" title="Informations du projet"></button>
+    <select id="lvlSel" data-in="level" title="Niveau"></select>
+    <button class="hbtn" data-act="addLevel" title="Ajouter un niveau (étage)">＋<span class="lbl"> Niveau</span></button>
+    <nav class="tabs" id="tabs">
+      <button data-act="tab" data-v="plan">Plan</button>
+      <button data-act="tab" data-v="metres">Métrés</button>
+      <button data-act="tab" data-v="desordres">Désordres</button>
+      <button data-act="tab" data-v="rapport">Rapport PDF</button>
+    </nav>
+    <div class="sp"></div>
+    <button class="hbtn" data-act="undo" title="Annuler (Ctrl+Z)">↶</button>
+    <button class="hbtn redo" data-act="redo" title="Rétablir (Ctrl+Y)">↷</button>
+    <button class="hbtn" data-act="menu" id="menuBtn">☰<span class="lbl"> Menu</span></button>
+  </header>
+  <main id="main">
+    <div id="stage">
+      <svg id="plan" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="gridS" width="0.1" height="0.1" patternUnits="userSpaceOnUse"><path id="gridSp" d="M0.1 0H0V0.1" fill="none" stroke="#eef3f4"/></pattern>
+          <pattern id="gridL" width="1" height="1" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="url(#gridS)"/><path id="gridLp" d="M1 0H0V1" fill="none" stroke="#d3dde0"/></pattern>
+        </defs>
+        <rect id="gridRect" fill="url(#gridL)"/>
+        <image id="bgImg" data-kind="bg" preserveAspectRatio="none" display="none"/>
+        <g id="gPlan"></g>
+      </svg>
+      <div id="hint"></div>
+      <div id="scalebar"><div id="sbBar"></div><span id="sbTxt"></span></div>
+      <svg id="north" viewBox="-22 -22 44 44"><circle r="20" fill="#fff" stroke="#9aa9ad"/><g id="northG"><path d="M0-7 5 12 0 8-5 12Z" fill="#1d2528"/><text y="-12" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="central" fill="#1d2528">N</text></g></svg>
+      <div id="toolbar">
+        <button class="tool" data-act="tool" data-v="select" title="Sélectionner et déplacer">✋<small>Déplacer</small></button>
+        <button class="tool" data-act="tool" data-v="room" title="Ajouter une pièce">➕<small>Pièce</small></button>
+        <button class="tool" data-act="tool" data-v="trace" title="Tracer une pièce point par point">✏️<small>Tracer</small></button>
+        <button class="tool" data-act="tool" data-v="door" title="Placer une porte">🚪<small>Porte</small></button>
+        <button class="tool" data-act="tool" data-v="window" title="Placer une fenêtre">🪟<small>Fenêtre</small></button>
+        <button class="tool" data-act="tool" data-v="defect" title="Signaler un désordre">⚠️<small>Désordre</small></button>
+        <button class="tool" data-act="tool" data-v="bg" title="Photo ou croquis en fond">🖼️<small>Fond</small></button>
+        <button class="tool" data-act="tool" data-v="ai" title="Analyse automatique par IA">✨<small>IA</small></button>
+      </div>
+      <div id="zoomCtl">
+        <button data-act="zoomIn" title="Zoom avant">＋</button>
+        <button data-act="zoomOut" title="Zoom arrière">－</button>
+        <button data-act="fit" title="Tout afficher">⤢</button>
+      </div>
+      <div id="empty"></div>
+    </div>
+    <aside id="panel"><button id="panelHandle" data-act="panelToggle"></button><div id="panelBody"></div></aside>
+    <section id="pageView"></section>
+  </main>
+</div>
+<div id="modal" class="hidden"><div class="mbox" id="mbox"></div></div>
+<div id="menuPop" class="hidden"></div>
+<div id="toast"></div>
+<input type="file" id="fileIn" hidden>
+<noscript>Cette application nécessite JavaScript.</noscript>
+<script>
+'use strict';
+/* =====================================================================
+   Lakaz Plan : relevé de bâtiments existants (plans cotés, désordres, métrés)
+   Fichier unique, sans dépendance, fonctionne hors ligne.
+   Unités internes : mètres. Repère écran : x vers la droite, y vers le bas.
+   ===================================================================== */
+
+// ---------- Utilitaires ----------
+const $ = (s, el = document) => el.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 10);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const f4 = n => +(+n).toFixed(4);
+const fmt = (v, d = 2) => (v == null || isNaN(v)) ? '–' : (+v).toFixed(d).replace('.', ',');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const letter = i => String.fromCharCode(65 + i);
+function parseNum(s) { s = String(s ?? '').trim().replace(/\s/g, '').replace(',', '.'); return s ? parseFloat(s) : NaN; }
+const V = {
+  add: (a, b) => ({ x: a.x + b.x, y: a.y + b.y }), sub: (a, b) => ({ x: a.x - b.x, y: a.y - b.y }),
+  mul: (a, k) => ({ x: a.x * k, y: a.y * k }), dot: (a, b) => a.x * b.x + a.y * b.y,
+  cross: (a, b) => a.x * b.y - a.y * b.x, len: a => Math.hypot(a.x, a.y),
+  dist: (a, b) => Math.hypot(a.x - b.x, a.y - b.y),
+  norm: a => { const l = Math.hypot(a.x, a.y) || 1; return { x: a.x / l, y: a.y / l }; },
+  rot: (a, deg) => { const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return { x: a.x * c - a.y * s, y: a.x * s + a.y * c }; },
+};
+const pt = p => f4(p.x) + ' ' + f4(p.y);
+const pstr = P => P.map(p => f4(p.x) + ',' + f4(p.y)).join(' ');
+function area(P) { let s = 0; for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; s += a.x * b.y - b.x * a.y; } return s / 2; }
+function perimeter(P) { let s = 0; for (let i = 0; i < P.length; i++) s += V.dist(P[i], P[(i + 1) % P.length]); return s; }
+function centroid(P) {
+  const A = area(P); if (Math.abs(A) < 1e-9) return V.mul(P.reduce((s, p) => V.add(s, p), { x: 0, y: 0 }), 1 / P.length);
+  let cx = 0, cy = 0; for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length], c = a.x * b.y - b.x * a.y; cx += (a.x + b.x) * c; cy += (a.y + b.y) * c; }
+  return { x: cx / (6 * A), y: cy / (6 * A) };
+}
+function inPoly(p, P) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { if (((P[i].y > p.y) !== (P[j].y > p.y)) && (p.x < (P[j].x - P[i].x) * (p.y - P[i].y) / (P[j].y - P[i].y) + P[i].x)) c = !c; } return c; }
+function labelPoint(P) {
+  const c = centroid(P); if (inPoly(c, P)) return c;
+  let best = null, ba = 0; // repli : centre du plus grand triangle en éventail
+  for (let k = 1; k < P.length - 1; k++) { const t = [P[0], P[k], P[k + 1]], a = Math.abs(area(t)); if (a > ba) { ba = a; best = centroid(t); } }
+  return best || c;
+}
+function bbox(P) { const b = { minx: Infinity, miny: Infinity, maxx: -Infinity, maxy: -Infinity }; for (const p of P) { b.minx = Math.min(b.minx, p.x); b.miny = Math.min(b.miny, p.y); b.maxx = Math.max(b.maxx, p.x); b.maxy = Math.max(b.maxy, p.y); } return b; }
+// Décalage d'un polygone (sens horaire à l'écran, aire positive) vers l'extérieur
+function offsetPts(P, t) {
+  const n = P.length, lines = [];
+  for (let i = 0; i < n; i++) { const a = P[i], b = P[(i + 1) % n], d = V.norm(V.sub(b, a)), no = { x: d.y, y: -d.x }; lines.push({ p: V.add(a, V.mul(no, t)), d, no }); }
+  return P.map((p, i) => {
+    const L1 = lines[(i - 1 + n) % n], L2 = lines[i], den = V.cross(L1.d, L2.d);
+    if (Math.abs(den) < 1e-6) return V.add(p, V.mul(L2.no, t));
+    const k = V.cross(V.sub(L2.p, L1.p), L2.d) / den, q = V.add(L1.p, V.mul(L1.d, k));
+    return V.dist(q, p) > t * 6 ? V.add(p, V.mul(L2.no, t)) : q;
+  });
+}
+
+// ---------- Référentiels métier ----------
+const ROOM_NAMES = ['Salon', 'Séjour', 'Chambre', 'Cuisine', "Salle d'eau", 'WC', 'Varangue', 'Couloir', 'Entrée', 'Débarras', 'Bureau', 'Buanderie', 'Garage', 'Escalier'];
+const CATS = {
+  fissure: { l: 'Fissure / lézarde', i: '⚡' }, humidite: { l: 'Humidité / infiltration', i: '💧' },
+  beton: { l: 'Béton éclaté / fers rouillés', i: '🧱' }, structure: { l: 'Structure (poteau, poutre, dalle)', i: '🏗️' },
+  toiture: { l: 'Toiture / tôles / charpente', i: '🏠' }, termites: { l: 'Termites / bois attaqué', i: '🐜' },
+  moisissure: { l: 'Moisissures', i: '🍄' }, electricite: { l: 'Électricité', i: '🔌' },
+  plomberie: { l: 'Plomberie / évacuations', i: '🚰' }, menuiserie: { l: 'Portes, fenêtres, volets', i: '🚪' },
+  sol: { l: 'Sols / carrelage', i: '⬛' }, autre: { l: 'Autre', i: '•' },
+};
+const SEV = { 1: { l: 'À surveiller', c: '#2e9d5b' }, 2: { l: 'À réparer', c: '#d99a00' }, 3: { l: 'Urgent', c: '#e0522b' }, 4: { l: 'Danger', c: '#a3123a' } };
+const OPEN_T = {
+  porte: { l: 'Porte', s: 'P', w: 0.80, h: 2.10, sill: 0 },
+  fenetre: { l: 'Fenêtre', s: 'F', w: 1.00, h: 1.20, sill: 0.90 },
+  baie: { l: 'Porte-fenêtre', s: 'PF', w: 1.60, h: 2.10, sill: 0 },
+  passage: { l: 'Passage libre', s: 'Ps', w: 0.90, h: 2.10, sill: 0 },
+};
+const UNITS = ['m²', 'ml', 'u', 'forfait'];
+const SCALES = [20, 25, 50, 75, 100, 125, 200, 250, 500, 1000];
+
+// ---------- Modèle ----------
+const M = (v, m = false) => ({ v, m });
+function newProject(name) {
+  return { id: uid(), v: 1, name: name || 'Nouveau relevé', address: '', client: '', author: '', date: new Date().toISOString().slice(0, 10), north: 0, notes: '', created: Date.now(), updated: Date.now(), lastExport: 0, levels: [newLevel('Rez-de-chaussée')], photos: {} };
+}
+function newLevel(name) { return { id: uid(), name, rooms: [], defects: [], bg: null }; }
+function newRoom(name) { return { id: uid(), name: name || 'Pièce', mode: 'rect', rect: { L: M(4), W: M(3), D: M(0) }, poly: null, x: 0, y: 0, rot: 0, h: M(2.6), t: 0.20, openings: [] }; }
+
+// Résolution géométrique d'une pièce à partir des mesures (triangulation en éventail depuis le coin 1)
+function solveRoom(r) {
+  if (r.mode === 'rect') {
+    const L = Math.max(0.05, r.rect.L.v), W = Math.max(0.05, r.rect.W.v);
+    const pts = [{ x: 0, y: 0 }, { x: L, y: 0 }, { x: L, y: W }, { x: 0, y: W }];
+    let ctrl = null; if (r.rect.D.m && r.rect.D.v > 0) { const e = Math.hypot(L, W); ctrl = { meas: r.rect.D.v, exp: e, diff: r.rect.D.v - e }; }
+    return { pts, err: null, ctrl };
+  }
+  const s = r.poly.sides.map(o => Math.max(0.01, o.v)), d = r.poly.diags.map(o => Math.max(0.01, o.v)), n = s.length;
+  const P = [{ x: 0, y: 0 }, { x: s[0], y: 0 }]; let err = null;
+  for (let k = 2; k < n; k++) {
+    const r0 = k <= n - 2 ? d[k - 2] : s[n - 1], r1 = s[k - 1], A = P[0], B = P[k - 1];
+    const dd = V.dist(A, B) || 1e-9, ex = V.mul(V.sub(B, A), 1 / dd), a = (r0 * r0 - r1 * r1 + dd * dd) / (2 * dd);
+    let h2 = r0 * r0 - a * a;
+    if (h2 < 0) {
+      if (!err && Math.sqrt(-h2) > 0.02) err = `Triangle impossible entre les coins 1, ${k} et ${k + 1} : vérifiez ${k <= n - 2 ? 'la diagonale d' + (k - 1) : 'le mur ' + letter(n - 1)} et le mur ${letter(k - 1)} (un côté est plus long que la somme des deux autres).`;
+      h2 = 0;
+    }
+    const h = Math.sqrt(h2);
+    P.push({ x: A.x + ex.x * a - ex.y * h, y: A.y + ex.y * a + ex.x * h });
+  }
+  let ctrl = null;
+  if (n === 4 && r.poly.ctrl && r.poly.ctrl.m && r.poly.ctrl.v > 0) { const e = V.dist(P[1], P[3]); ctrl = { meas: r.poly.ctrl.v, exp: e, diff: r.poly.ctrl.v - e }; }
+  return { pts: P, err, ctrl };
+}
+function worldPts(r, g) { g = g || solveRoom(r); return g.pts.map(p => { const q = V.rot(p, r.rot); return { x: q.x + r.x, y: q.y + r.y }; }); }
+// Liste des mesures d'une pièce (pour le panneau, la précision, le surlignage)
+function measList(r) {
+  const L = [];
+  if (r.mode === 'rect') {
+    L.push({ k: 'L', lab: 'Longueur · mur A', sub: 'du coin 1 au coin 2', o: r.rect.L });
+    L.push({ k: 'W', lab: 'Largeur · mur B', sub: 'du coin 2 au coin 3', o: r.rect.W });
+    L.push({ k: 'D', lab: 'Diagonale de contrôle', sub: 'du coin 1 au coin 3 · conseillée', o: r.rect.D, opt: true });
+  } else {
+    const n = r.poly.sides.length;
+    r.poly.sides.forEach((o, i) => L.push({ k: 's' + i, lab: 'Mur ' + letter(i), sub: `du coin ${i + 1} au coin ${(i + 1) % n + 1}`, o }));
+    r.poly.diags.forEach((o, i) => L.push({ k: 'd' + i, lab: 'Diagonale d' + (i + 1), sub: `du coin 1 au coin ${i + 3}`, o }));
+    if (n === 4) L.push({ k: 'c', lab: 'Diagonale de contrôle', sub: 'du coin 2 au coin 4 · conseillée', o: r.poly.ctrl, opt: true });
+  }
+  return L;
+}
+function getMeas(r, k) { if (k === 'h') return r.h; const m = measList(r).find(m => m.k === k); return m && m.o; }
+function edgeMeasured(r, i) { return r.mode === 'rect' ? (i % 2 === 0 ? r.rect.L.m : r.rect.W.m) : r.poly.sides[i].m; }
+function precision(r) { const req = measList(r).filter(m => !m.opt); const ok = req.filter(m => m.o.m).length; return { ok, tot: req.length, h: r.h.m }; }
+
+// Conversion d'un contour (tracé, IA) en pièce mesurable
+function isRectPts(P) {
+  if (P.length !== 4) return false;
+  for (let i = 0; i < 4; i++) { const a = V.norm(V.sub(P[(i + 3) % 4], P[i])), b = V.norm(V.sub(P[(i + 1) % 4], P[i])); if (Math.abs(V.dot(a, b)) > 0.05) return false; }
+  return true;
+}
+const r2 = v => Math.round(v * 100) / 100;
+function roomFromPts(name, pts, forcePoly) {
+  let P = pts.map(p => ({ x: p.x, y: p.y }));
+  if (area(P) < 0) P.reverse();
+  const r = newRoom(name), n = P.length;
+  if (!forcePoly && isRectPts(P)) {
+    r.mode = 'rect'; r.rect.L = M(r2(V.dist(P[0], P[1]))); r.rect.W = M(r2(V.dist(P[1], P[2])));
+    r.x = P[0].x; r.y = P[0].y; r.rot = Math.atan2(P[1].y - P[0].y, P[1].x - P[0].x) * 180 / Math.PI;
+    return r;
+  }
+  // coin de départ d'où tous les autres sont visibles (forme en L : l'angle rentrant)
+  let start = 0;
+  for (let s = 0; s < n; s++) {
+    let ok = true; const P0 = P[s];
+    for (let k = 1; k < n - 1; k++) { const a = P[(s + k) % n], b = P[(s + k + 1) % n]; if (V.cross(V.sub(a, P0), V.sub(b, P0)) <= 1e-9) { ok = false; break; } }
+    if (ok) { start = s; break; }
+  }
+  const q = P.slice(start).concat(P.slice(0, start));
+  r.mode = 'poly';
+  r.poly = { sides: q.map((p, i) => M(r2(V.dist(p, q[(i + 1) % n])))), diags: [], ctrl: M(0) };
+  for (let k = 2; k <= n - 2; k++) r.poly.diags.push(M(r2(V.dist(q[0], q[k]))));
+  r.x = q[0].x; r.y = q[0].y; r.rot = Math.atan2(q[1].y - q[0].y, q[1].x - q[0].x) * 180 / Math.PI;
+  return r;
+}
+function templateRoom(kind, name) {
+  if (kind === 'rect') return newRoom(name);
+  if (kind === 'quad') return roomFromPts(name, [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 3 }, { x: 0, y: 3 }], true);
+  if (kind === 'L') return roomFromPts(name, [{ x: 0, y: 0 }, { x: 3, y: 0 }, { x: 3, y: 2 }, { x: 5, y: 2 }, { x: 5, y: 4.5 }, { x: 0, y: 4.5 }]);
+}
+function rectToPoly(r) {
+  const { L, W, D } = r.rect;
+  r.poly = { sides: [M(L.v, L.m), M(W.v, W.m), M(L.v, false), M(W.v, false)], diags: [M(D.v > 0 ? D.v : r2(Math.hypot(L.v, W.v)), D.m)], ctrl: M(0) };
+  r.mode = 'poly';
+}
+function roomMetrics(r) {
+  const g = solveRoom(r), A = Math.abs(area(g.pts)), P = perimeter(g.pts), h = r.h.v;
+  let opA = 0, doorW = 0; r.openings.forEach(o => { opA += o.w * o.h; if (o.type !== 'fenetre') doorW += o.w; });
+  const pr = precision(r);
+  return { A, P, h, wallGross: P * h, opA, wallNet: Math.max(0, P * h - opA), plinthe: Math.max(0, P - doorW), vol: A * h, est: (pr.tot - pr.ok) + (r.h.m ? 0 : 1), err: g.err, ctrl: g.ctrl };
+}
+function defectNumbers() { const m = new Map(); let n = 0; app.project.levels.forEach(L => L.defects.forEach(d => m.set(d.id, ++n))); return m; }
+
+// ---------- Stockage local (IndexedDB, repli mémoire) ----------
+const DB = {
+  db: null, mem: new Map(),
+  open() {
+    return new Promise(res => {
+      try {
+        const rq = indexedDB.open('lakaz-plan', 1);
+        rq.onupgradeneeded = () => rq.result.createObjectStore('projects', { keyPath: 'id' });
+        rq.onsuccess = () => { this.db = rq.result; res(true); };
+        rq.onerror = () => res(false);
+      } catch (e) { res(false); }
+    });
+  },
+  tx(mode) { return this.db.transaction('projects', mode).objectStore('projects'); },
+  req(r) { return new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
+  put(p) { if (!this.db) { this.mem.set(p.id, JSON.parse(JSON.stringify(p))); return Promise.resolve(); } return this.req(this.tx('readwrite').put(p)); },
+  get(id) { if (!this.db) return Promise.resolve(this.mem.get(id)); return this.req(this.tx('readonly').get(id)); },
+  all() { if (!this.db) return Promise.resolve([...this.mem.values()]); return this.req(this.tx('readonly').getAll()); },
+  del(id) { if (!this.db) { this.mem.delete(id); return Promise.resolve(); } return this.req(this.tx('readwrite').delete(id)); },
+};
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('lakaz.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('lakaz.' + k, JSON.stringify(v)); } catch (e) { } },
+};
+
+// ---------- État de l'application ----------
+const app = {
+  project: null, levelIdx: 0, tool: 'select', panelMode: null, sel: null, hl: null, tab: 'plan',
+  view: { cx: 5, cy: 4, zoom: 60 }, trace: null, calib: null, ai: { files: [], hint: '', busy: false, result: null, err: null },
+  undo: [], redo: [], pendingSnap: null, panelOpen: false,
+  rep: { paper: 'A4', orient: 'landscape', scale: 'auto', plans: true, metres: true, desordres: true, photos: true },
+  settings: LS.get('settings', { apiKey: '', model: 'claude-opus-5-5' }),
+};
+const lvl = () => app.project.levels[app.levelIdx];
+const findRoom = id => lvl().rooms.find(r => r.id === id);
+const findDefect = id => lvl().defects.find(d => d.id === id);
+function findOpening(id) { for (const r of lvl().rooms) { const o = r.openings.find(o => o.id === id); if (o) return { r, o }; } return null; }
+
+// Annuler / rétablir (les photos sont stockées à part et ne sont jamais effacées par l'historique)
+function snap() { const { photos, ...rest } = app.project; return JSON.stringify(rest); }
+function pushUndo(s) { app.undo.push(s || snap()); if (app.undo.length > 80) app.undo.shift(); app.redo = []; }
+function restore(s) {
+  const photos = app.project.photos; app.project = Object.assign(JSON.parse(s), { photos });
+  app.levelIdx = Math.min(app.levelIdx, app.project.levels.length - 1);
+  if (app.sel && !selObj()) app.sel = null;
+  save(); ui();
+}
+function undo() { if (!app.undo.length) return toast('Rien à annuler'); app.redo.push(snap()); restore(app.undo.pop()); }
+function redo() { if (!app.redo.length) return toast('Rien à rétablir'); app.undo.push(snap()); restore(app.redo.pop()); }
+function mutate(fn, structural = true) { pushUndo(); fn(); changed(structural); }
+let saveT = null;
+function save() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => { app.project.updated = Date.now(); DB.put(app.project).catch(e => toast('Erreur de sauvegarde : ' + e.message)); LS.set('last', app.project.id); }, 350);
+}
+function changed(structural = true) { save(); if (structural) ui(); else draw(); }
+
+// ---------- Vue / repère ----------
+const svg = $('#plan'), gPlan = $('#gPlan'), stage = $('#stage');
+function updateViewBox() {
+  const R = stage.getBoundingClientRect(); if (!R.width) return;
+  const z = app.view.zoom, w = R.width / z, h = R.height / z, x = app.view.cx - w / 2, y = app.view.cy - h / 2;
+  svg.setAttribute('viewBox', `${f4(x)} ${f4(y)} ${f4(w)} ${f4(h)}`);
+  const gr = $('#gridRect'); gr.setAttribute('x', x); gr.setAttribute('y', y); gr.setAttribute('width', w); gr.setAttribute('height', h);
+  $('#gridLp').setAttribute('stroke-width', 1 / z); $('#gridSp').setAttribute('stroke-width', 1 / z);
+  $('#gridSp').setAttribute('stroke', z > 110 ? '#eef3f4' : 'none');
+  // barre d'échelle
+  const target = 90 / z; const steps = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100]; const L = steps.find(s => s >= target) || 100;
+  $('#sbBar').style.width = (L * z) + 'px'; $('#sbTxt').textContent = (L < 1 ? (L * 100) + ' cm' : L + ' m');
+}
+function toWorld(e) { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const q = p.matrixTransform(svg.getScreenCTM().inverse()); return { x: q.x, y: q.y }; }
+function levelBBoxPts(L, withBg) {
+  const P = [];
+  L.rooms.forEach(r => P.push(...offsetPts(worldPts(r), r.t)));
+  L.defects.forEach(d => P.push({ x: d.x, y: d.y }));
+  if (withBg && L.bg && L.bg.show) { const b = L.bg, h = b.w * b.natH / b.natW; [[0, 0], [b.w, 0], [b.w, h], [0, h]].forEach(([x, y]) => P.push(V.add({ x: b.x, y: b.y }, V.rot({ x, y }, b.rot)))); }
+  return P;
+}
+function fitView() {
+  const P = levelBBoxPts(lvl(), true), R = stage.getBoundingClientRect();
+  if (!P.length || !R.width) { app.view = { cx: 4, cy: 3, zoom: Math.min(R.width || 600, R.height || 400) / 12 }; updateViewBox(); draw(); return; }
+  const b = bbox(P), w = Math.max(2, b.maxx - b.minx), h = Math.max(2, b.maxy - b.miny);
+  // marges : barre d'outils à gauche (ordinateur) ou en bas (mobile), boutons de zoom à droite
+  const desk = window.innerWidth > 820, padX = desk ? 190 : 110, padY = desk ? 70 : 120;
+  app.view.zoom = clamp(Math.min((R.width - padX) / w, (R.height - padY) / h), 4, 800);
+  app.view.cx = (b.minx + b.maxx) / 2 - (desk ? 35 : 0) / app.view.zoom; app.view.cy = (b.miny + b.maxy) / 2 + (desk ? 0 : 30) / app.view.zoom;
+  updateViewBox(); draw();
+}
+function zoomAt(k, sx, sy) {
+  const R = stage.getBoundingClientRect(); sx = sx ?? R.width / 2; sy = sy ?? R.height / 2;
+  const z0 = app.view.zoom, wx = app.view.cx + (sx - R.width / 2) / z0, wy = app.view.cy + (sy - R.height / 2) / z0;
+  const z = clamp(z0 * k, 3, 1500); app.view.zoom = z;
+  app.view.cx = wx - (sx - R.width / 2) / z; app.view.cy = wy - (sy - R.height / 2) / z;
+  updateViewBox(); draw();
+}
+
+// ---------- Dessin du plan (SVG) ----------
+const FONT = 'font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif"';
+function T(p, txt, size, extra = '') { return `<text x="${f4(p.x)}" y="${f4(p.y)}" font-size="${f4(size)}" text-anchor="middle" dominant-baseline="central" ${FONT} ${extra}>${esc(txt)}</text>`; }
+function Ln(a, b, w, col = '#222', extra = '') { return `<line x1="${f4(a.x)}" y1="${f4(a.y)}" x2="${f4(b.x)}" y2="${f4(b.y)}" stroke="${col}" stroke-width="${f4(w)}" ${extra}/>`; }
+function uprightAngle(d) { let a = Math.atan2(d.y, d.x) * 180 / Math.PI; if (a > 90.5 || a <= -89.5) a += 180; return f4(a); }
+function openingGeom(W, op) {
+  const n = W.length, i = op.wall % n, A = W[i], B = W[(i + 1) % n], L = V.dist(A, B), d = V.norm(V.sub(B, A)), no = { x: d.y, y: -d.x };
+  const w = Math.min(op.w, L), off = clamp(op.off, 0, Math.max(0, L - w)), S = V.add(A, V.mul(d, off)), E = V.add(S, V.mul(d, w));
+  return { A, B, L, d, no, S, E, off, w };
+}
+function openingSVG(r, W, op, u, sel, pr) {
+  const { d, no, S, E, w } = openingGeom(W, op), t = r.t, P = (p, k) => V.add(p, V.mul(no, k));
+  const isSel = sel.kind === 'opening' && sel.id === op.id, lw = 0.9 * u, col = '#1d2528';
+  let s = `<g data-kind="opening" data-id="${op.id}">`;
+  s += `<polygon points="${pstr([P(S, -0.004), P(E, -0.004), P(E, t + 0.004), P(S, t + 0.004)])}" fill="#fff" stroke="${isSel ? '#0a8ea3' : 'none'}" stroke-width="${f4(2.5 * u)}"/>`;
+  s += Ln(S, P(S, t), lw, col) + Ln(E, P(E, t), lw, col);
+  if (op.type === 'fenetre' || op.type === 'baie') {
+    s += Ln(S, E, 0.6 * u, col) + Ln(P(S, t), P(E, t), 0.6 * u, col) + Ln(P(S, t * 0.42), P(E, t * 0.42), 0.6 * u, col) + Ln(P(S, t * 0.58), P(E, t * 0.58), 0.6 * u, col);
+  }
+  if (op.type === 'porte' || op.type === 'baie') {
+    const out = op.swing === 'out', face = out ? [P(S, t), P(E, t)] : [S, E], dir = out ? no : V.mul(no, -1);
+    const leaves = op.type === 'baie' ? [[face[0], V.mul(V.add(face[0], face[1]), 0.5), w / 2], [face[1], V.mul(V.add(face[0], face[1]), 0.5), w / 2]]
+      : [op.hinge === 'R' ? [face[1], face[0], w] : [face[0], face[1], w]];
+    for (const [H, J, lw2] of leaves) {
+      const le = V.add(H, V.mul(dir, lw2)), sw = V.cross(V.sub(le, H), V.sub(J, H)) > 0 ? 1 : 0;
+      s += Ln(H, le, 1.4 * u, col);
+      s += `<path d="M${pt(le)}A${f4(lw2)} ${f4(lw2)} 0 0 ${sw} ${pt(J)}" fill="none" stroke="${col}" stroke-width="${f4(0.6 * u)}" stroke-dasharray="${f4(3 * u)} ${f4(2 * u)}"/>`;
+    }
+  }
+  // étiquette
+  // fenêtres : étiquette côté extérieur ; portes : côté intérieur, sous la cote du mur
+  const mid = V.mul(V.add(S, E), 0.5), lp = V.add(mid, V.mul(no, op.type === 'fenetre' ? t + 8 * u : -19 * u));
+  const lab = OPEN_T[op.type].s + ' ' + fmt(op.w) + (op.type === 'fenetre' ? '×' + fmt(op.h) : '');
+  s += T(lp, lab, 7.5 * u, `fill="#0b4652" transform="rotate(${uprightAngle(d)} ${f4(lp.x)} ${f4(lp.y)})"`);
+  return s + '</g>';
+}
+function hlSeg(r, W, k) {
+  if (!k) return null; const n = W.length;
+  if (r.mode === 'rect') { if (k === 'L') return [W[0], W[1]]; if (k === 'W') return [W[1], W[2]]; if (k === 'D') return [W[0], W[2]]; }
+  else { if (k[0] === 's') { const i = +k.slice(1); return [W[i], W[(i + 1) % n]]; } if (k[0] === 'd') return [W[0], W[+k.slice(1) + 2]]; if (k === 'c') return [W[1], W[3]]; }
+  return null;
+}
+function svgPlan(L, o) {
+  const u = o.u, pr = !!o.print, sel = o.sel || {}, bgOn = !pr && L.bg && L.bg.show;
+  const geo = L.rooms.map(r => { const g = solveRoom(r); return { r, g, W: worldPts(r, g) }; });
+  let s = '';
+  for (const { r, W } of geo) {
+    const isSel = sel.kind === 'room' && sel.id === r.id;
+    s += `<polygon data-kind="room" data-id="${r.id}" points="${pstr(W)}" fill="${pr ? '#fff' : isSel ? '#dcf0f3' : '#fbfaf6'}" fill-opacity="${bgOn ? 0.5 : 1}"/>`;
+  }
+  for (const { r, W } of geo) {
+    const O = offsetPts(W, r.t); let d = '';
+    for (let i = 0; i < W.length; i++) { const j = (i + 1) % W.length; d += `M${pt(W[i])}L${pt(W[j])}L${pt(O[j])}L${pt(O[i])}Z`; }
+    s += `<path data-kind="room" data-id="${r.id}" d="${d}" fill="#3b3b3b" stroke="#3b3b3b" stroke-width="${f4(0.5 * u)}" stroke-linejoin="round"/>`;
+  }
+  for (const { r, W } of geo) for (const op of r.openings) s += openingSVG(r, W, op, u, sel, pr);
+  for (const { r, g, W } of geo) {
+    const n = W.length;
+    for (let i = 0; i < n; i++) {
+      const A = W[i], B = W[(i + 1) % n], len = V.dist(A, B); if (len < 0.25) continue;
+      const d = V.norm(V.sub(B, A)), ni = { x: -d.y, y: d.x }, p = V.add(V.mul(V.add(A, B), 0.5), V.mul(ni, 8 * u)), m = edgeMeasured(r, i);
+      s += T(p, (m ? '' : '≈') + fmt(len), 8.5 * u, `fill="${m ? '#1d2528' : '#c45f00'}" ${m ? '' : 'font-style="italic"'} transform="rotate(${uprightAngle(d)} ${f4(p.x)} ${f4(p.y)})"`);
+    }
+    const c = labelPoint(W), A = Math.abs(area(W)), est = precision(r).ok < precision(r).tot;
+    s += T(V.add(c, { x: 0, y: -8 * u }), r.name, 10.5 * u, 'font-weight="700" fill="#1d2528"');
+    s += T(V.add(c, { x: 0, y: 5 * u }), (est ? '≈' : '') + fmt(A) + ' m²', 9 * u, `fill="${est ? '#c45f00' : '#1d2528'}"`);
+    s += T(V.add(c, { x: 0, y: 16 * u }), 'HSP ' + (r.h.m ? '' : '≈') + fmt(r.h.v), 7 * u, 'fill="#6b777b"');
+    if (g.err && !pr) s += T(V.add(c, { x: 0, y: 28 * u }), '⚠ mesures incohérentes', 8 * u, 'fill="#c8312b" font-weight="700"');
+  }
+  // sélection : contour, coins numérotés, lettres des murs
+  if (!pr && sel.kind === 'room') {
+    const it = geo.find(x => x.r.id === sel.id);
+    if (it) {
+      const { r, W } = it, n = W.length;
+      s += `<polygon points="${pstr(W)}" fill="none" stroke="#0a8ea3" stroke-width="${f4(2.5 * u)}" pointer-events="none"/>`;
+      const hs = hlSeg(r, W, app.hl); if (hs) s += Ln(hs[0], hs[1], 4 * u, '#e0322b', 'stroke-linecap="round" pointer-events="none"');
+      for (let i = 0; i < n; i++) {
+        const A = W[i], B = W[(i + 1) % n], d = V.norm(V.sub(B, A)), no = { x: d.y, y: -d.x };
+        const lp = V.add(V.mul(V.add(A, B), 0.5), V.mul(no, r.t + 9 * u));
+        s += `<circle cx="${f4(lp.x)}" cy="${f4(lp.y)}" r="${f4(7 * u)}" fill="#0a8ea3" pointer-events="none"/>` + T(lp, letter(i), 8 * u, 'fill="#fff" font-weight="700" pointer-events="none"');
+        s += `<circle cx="${f4(A.x)}" cy="${f4(A.y)}" r="${f4(6.5 * u)}" fill="#fff" stroke="#0a8ea3" stroke-width="${f4(1.5 * u)}" pointer-events="none"/>` + T(A, i + 1, 7 * u, 'fill="#0a8ea3" font-weight="700" pointer-events="none"');
+      }
+    }
+  }
+  // désordres
+  const nums = defectNumbers();
+  for (const df of L.defects) {
+    const isSel = sel.kind === 'defect' && sel.id === df.id, col = SEV[df.sev].c, p = { x: df.x, y: df.y };
+    s += `<g data-kind="defect" data-id="${df.id}">`;
+    if (isSel || df.place) s += `<circle cx="${f4(p.x)}" cy="${f4(p.y)}" r="${f4(15 * u)}" fill="none" stroke="${isSel ? '#0a8ea3' : col}" stroke-width="${f4(2 * u)}" ${df.place ? `stroke-dasharray="${f4(3 * u)} ${f4(2 * u)}"` : ''}/>`;
+    s += `<circle cx="${f4(p.x)}" cy="${f4(p.y)}" r="${f4(10 * u)}" fill="${col}" stroke="#fff" stroke-width="${f4(2 * u)}"/>` + T(p, nums.get(df.id), 9 * u, 'fill="#fff" font-weight="700"') + '</g>';
+  }
+  if (o.dims) s += overallDims(L, u);
+  // aperçus de tracé / calibrage
+  if (!pr && app.trace && app.trace.pts.length) {
+    const P = app.trace.pts.concat(app.trace.hover ? [app.trace.hover] : []);
+    s += `<polyline points="${pstr(P)}" fill="rgba(10,142,163,.08)" stroke="#0a8ea3" stroke-width="${f4(2 * u)}" stroke-dasharray="${f4(5 * u)} ${f4(3 * u)}" pointer-events="none"/>`;
+    for (let i = 0; i + 1 < P.length; i++) { const m = V.mul(V.add(P[i], P[i + 1]), 0.5); s += T(V.add(m, { x: 0, y: -9 * u }), '≈' + fmt(V.dist(P[i], P[i + 1])), 8.5 * u, 'fill="#0a8ea3" font-weight="700" pointer-events="none"'); }
+    app.trace.pts.forEach((p, i) => { s += `<circle cx="${f4(p.x)}" cy="${f4(p.y)}" r="${f4((i === 0 ? 8 : 5) * u)}" fill="${i === 0 ? '#fff' : '#0a8ea3'}" stroke="#0a8ea3" stroke-width="${f4(2 * u)}" pointer-events="none"/>`; });
+  }
+  if (!pr && app.calib && app.calib.pts.length) {
+    const P = app.calib.pts.concat(app.calib.hover && app.calib.pts.length < 2 ? [app.calib.hover] : []);
+    s += `<polyline points="${pstr(P)}" fill="none" stroke="#e0322b" stroke-width="${f4(2.5 * u)}" pointer-events="none"/>`;
+    app.calib.pts.forEach(p => { s += `<circle cx="${f4(p.x)}" cy="${f4(p.y)}" r="${f4(6 * u)}" fill="#e0322b" pointer-events="none"/>`; });
+  }
+  return s;
+}
+function overallDims(L, u) {
+  const P = []; L.rooms.forEach(r => P.push(...offsetPts(worldPts(r), r.t))); if (!P.length) return '';
+  const b = bbox(P), off = 26 * u, tk = 4 * u, col = '#1d2528';
+  const y = b.miny - off, x = b.minx - off;
+  let s = Ln({ x: b.minx, y }, { x: b.maxx, y }, 0.7 * u, col) + Ln({ x: b.minx, y: b.miny - 4 * u }, { x: b.minx, y: y - 4 * u }, 0.5 * u, col) + Ln({ x: b.maxx, y: b.miny - 4 * u }, { x: b.maxx, y: y - 4 * u }, 0.5 * u, col);
+  s += Ln({ x: b.minx - tk, y: y + tk }, { x: b.minx + tk, y: y - tk }, 1.2 * u, col) + Ln({ x: b.maxx - tk, y: y + tk }, { x: b.maxx + tk, y: y - tk }, 1.2 * u, col);
+  s += T({ x: (b.minx + b.maxx) / 2, y: y - 7 * u }, fmt(b.maxx - b.minx) + ' m (hors tout)', 8.5 * u, 'fill="#1d2528" font-weight="600"');
+  s += Ln({ x, y: b.miny }, { x, y: b.maxy }, 0.7 * u, col) + Ln({ x: b.minx - 4 * u, y: b.miny }, { x: x - 4 * u, y: b.miny }, 0.5 * u, col) + Ln({ x: b.minx - 4 * u, y: b.maxy }, { x: x - 4 * u, y: b.maxy }, 0.5 * u, col);
+  s += Ln({ x: x - tk, y: b.miny + tk }, { x: x + tk, y: b.miny - tk }, 1.2 * u, col) + Ln({ x: x - tk, y: b.maxy + tk }, { x: x + tk, y: b.maxy - tk }, 1.2 * u, col);
+  const ly = { x: x - 7 * u, y: (b.miny + b.maxy) / 2 };
+  s += T(ly, fmt(b.maxy - b.miny) + ' m (hors tout)', 8.5 * u, `fill="#1d2528" font-weight="600" transform="rotate(-90 ${f4(ly.x)} ${f4(ly.y)})"`);
+  return s;
+}
+function draw() {
+  if (!app.project) return;
+  gPlan.innerHTML = svgPlan(lvl(), { u: 1 / app.view.zoom, sel: app.sel || {}, dims: true });
+}
+function renderBg() {
+  const L = lvl(), b = L.bg, el = $('#bgImg'), src = b && app.project.photos[b.photo];
+  if (!b || !b.show || !src) { el.setAttribute('display', 'none'); return; }
+  el.removeAttribute('display');
+  if (el.dataset.ph !== b.photo) { el.setAttribute('href', src); el.dataset.ph = b.photo; }
+  el.setAttribute('x', b.x); el.setAttribute('y', b.y); el.setAttribute('width', b.w); el.setAttribute('height', b.w * b.natH / b.natW);
+  el.setAttribute('opacity', b.op); el.setAttribute('transform', `rotate(${b.rot} ${b.x} ${b.y})`);
+}
+
+// ---------- Aimantation des pièces entre elles ----------
+function snapRoom(r, L, tol) {
+  const W = worldPts(r), n = W.length, cands = [];
+  for (const o of L.rooms) {
+    if (o.id === r.id) continue; const W2 = worldPts(o), m = W2.length;
+    for (let i = 0; i < n; i++) {
+      const a1 = W[i], b1 = W[(i + 1) % n], d1 = V.norm(V.sub(b1, a1));
+      for (let j = 0; j < m; j++) {
+        const a2 = W2[j], b2 = W2[(j + 1) % m], d2 = V.norm(V.sub(b2, a2)), n2 = { x: d2.y, y: -d2.x }, L2 = V.dist(a2, b2), dp = V.dot(d1, d2);
+        if (dp < -0.997) { // murs face à face : on les écarte de l'épaisseur du mur commun
+          const p1 = V.dot(V.sub(a1, a2), d2), p2 = V.dot(V.sub(b1, a2), d2);
+          if (Math.max(p1, p2) < -tol || Math.min(p1, p2) > L2 + tol) continue;
+          const dist = V.dot(V.sub(a1, a2), n2), delta = (r.t + o.t) / 2 - dist;
+          if (Math.abs(delta) < tol) cands.push({ v: V.mul(n2, delta), ax: n2, e: Math.abs(delta) });
+          for (const [p, q] of [[p1, L2], [p2, 0], [p1, 0], [p2, L2]]) { const dd = q - p; if (Math.abs(dd) < tol) cands.push({ v: V.mul(d2, dd), ax: d2, e: Math.abs(dd) }); }
+        } else if (dp > 0.997) { // murs dans le même alignement (façade continue)
+          const dist = V.dot(V.sub(a1, a2), n2), delta = (o.t - r.t) - dist;
+          if (Math.abs(delta) < tol) cands.push({ v: V.mul(n2, delta), ax: n2, e: Math.abs(delta) * 1.3 });
+        }
+      }
+    }
+  }
+  if (!cands.length) return { x: 0, y: 0 };
+  cands.sort((a, b) => a.e - b.e); const c1 = cands[0]; let v = { ...c1.v };
+  const c2 = cands.find(c => Math.abs(V.dot(c.ax, c1.ax)) < 0.2); if (c2) v = V.add(v, c2.v);
+  return v;
+}
+function rotateRoom(r, deg) { const c = centroid(worldPts(r)); r.rot = ((r.rot + deg) % 360 + 360) % 360; const c2 = centroid(worldPts(r)); r.x += c.x - c2.x; r.y += c.y - c2.y; }
+function freeSpot(L) { if (!L.rooms.length) return { x: 0, y: 0 }; const b = bbox(levelBBoxPts(L)); return { x: b.maxx + 1.2, y: b.miny + 0.2 }; }
+function placeRoom(r, p) { const W = worldPts(r), b = bbox(W); r.x += p.x - b.minx; r.y += p.y - b.miny; }
+function nearestWall(L, p, tol) {
+  let best = null;
+  for (const r of L.rooms) {
+    const W = worldPts(r), n = W.length;
+    for (let i = 0; i < n; i++) {
+      const A = W[i], B = W[(i + 1) % n], len = V.dist(A, B), d = V.norm(V.sub(B, A)), along = V.dot(V.sub(p, A), d);
+      if (along < -tol || along > len + tol) continue;
+      const no = { x: d.y, y: -d.x }, across = V.dot(V.sub(p, A), no);
+      if (across < -tol || across > r.t + tol) continue;
+      const e = Math.abs(across - r.t / 2);
+      if (!best || e < best.e) best = { r, i, along: clamp(along, 0, len), len, e };
+    }
+  }
+  return best;
+}
+function attachOpeningWorld(r, type, S, E) {
+  const W = worldPts(r), n = W.length, mid = V.mul(V.add(S, E), 0.5), w = V.dist(S, E); let best = null;
+  for (let i = 0; i < n; i++) {
+    const A = W[i], B = W[(i + 1) % n], len = V.dist(A, B), d = V.norm(V.sub(B, A)), al = clamp(V.dot(V.sub(mid, A), d), 0, len), e = V.dist(mid, V.add(A, V.mul(d, al)));
+    if (!best || e < best.e) best = { i, al, len, e };
+  }
+  if (!best) return;
+  const T0 = OPEN_T[type] || OPEN_T.porte, ww = clamp(w || T0.w, 0.3, best.len);
+  r.openings.push({ id: uid(), type: OPEN_T[type] ? type : 'porte', wall: best.i, off: clamp(best.al - ww / 2, 0, best.len - ww), w: r2(ww), h: T0.h, sill: T0.sill, swing: 'in', hinge: 'L' });
+}
+
+// ---------- Interaction sur le plan ----------
+const pointers = new Map(); let drag = null, pinch = null;
+svg.addEventListener('pointerdown', e => {
+  if (e.button > 0) return;
+  svg.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()]; const R = stage.getBoundingClientRect();
+    pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: app.view.zoom, cx: (a.x + b.x) / 2 - R.left, cy: (a.y + b.y) / 2 - R.top };
+    if (drag && drag.moved && drag.snap0) { /* garde l'état */ } drag = null; return;
+  }
+  const w = toWorld(e), tgt = e.target.closest && e.target.closest('[data-kind]'), kind = tgt && tgt.dataset.kind, id = tgt && tgt.dataset.id;
+  const base = { sx: e.clientX, sy: e.clientY, w0: w, moved: false, snap0: snap() };
+  if (app.tool === 'select' && kind === 'room') {
+    const r = findRoom(id); selectObj({ kind: 'room', id }); drag = { ...base, type: 'room', r, ox: r.x, oy: r.y };
+  } else if (app.tool === 'select' && kind === 'defect') {
+    const d = findDefect(id); selectObj({ kind: 'defect', id }); drag = { ...base, type: 'defect', d, ox: d.x, oy: d.y };
+  } else if (app.tool === 'select' && kind === 'opening') {
+    const f = findOpening(id); selectObj({ kind: 'opening', id }); const G = openingGeom(worldPts(f.r), f.o);
+    drag = { ...base, type: 'opening', f, grab: V.dot(V.sub(w, G.A), G.d) - G.off };
+  } else if (app.tool === 'bg' && kind === 'bg' && !app.calib) {
+    const b = lvl().bg; drag = { ...base, type: 'bg', ox: b.x, oy: b.y };
+  } else drag = { ...base, type: 'tap', cx: app.view.cx, cy: app.view.cy };
+});
+svg.addEventListener('pointermove', e => {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && pointers.size >= 2) {
+    const [a, b] = [...pointers.values()], d = Math.hypot(a.x - b.x, a.y - b.y), R = stage.getBoundingClientRect();
+    const k = (pinch.z * d / pinch.d) / app.view.zoom; zoomAt(k, pinch.cx, pinch.cy);
+    const ncx = (a.x + b.x) / 2 - R.left, ncy = (a.y + b.y) / 2 - R.top; app.view.cx -= (ncx - pinch.cx) / app.view.zoom; app.view.cy -= (ncy - pinch.cy) / app.view.zoom;
+    pinch.cx = ncx; pinch.cy = ncy; updateViewBox(); draw(); return;
+  }
+  const w = toWorld(e);
+  if (!drag) {
+    if (app.trace) { app.trace.hover = traceSnap(w); draw(); }
+    else if (app.calib) { app.calib.hover = w; draw(); }
+    return;
+  }
+  const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+  if (!drag.moved && Math.hypot(dx, dy) < 6) return;
+  if (!drag.moved) { drag.moved = true; if (drag.type !== 'tap') pushUndo(drag.snap0); }
+  const z = app.view.zoom, dw = { x: dx / z, y: dy / z };
+  if (drag.type === 'tap') { app.view.cx = drag.cx - dw.x; app.view.cy = drag.cy - dw.y; updateViewBox(); if (app.trace) app.trace.hover = traceSnap(w); draw(); return; }
+  if (drag.type === 'room') { const r = drag.r; r.x = drag.ox + dw.x; r.y = drag.oy + dw.y; const v = snapRoom(r, lvl(), 14 / z); r.x += v.x; r.y += v.y; }
+  else if (drag.type === 'defect') { drag.d.x = drag.ox + dw.x; drag.d.y = drag.oy + dw.y; drag.d.place = false; }
+  else if (drag.type === 'opening') { const { r, o } = drag.f, G = openingGeom(worldPts(r), o); o.off = r2(clamp(V.dot(V.sub(w, G.A), G.d) - drag.grab, 0, Math.max(0, G.L - o.w))); }
+  else if (drag.type === 'bg') { const b = lvl().bg; b.x = drag.ox + dw.x; b.y = drag.oy + dw.y; renderBg(); return; }
+  draw();
+});
+function endPointer(e) {
+  pointers.delete(e.pointerId);
+  if (pinch) { if (pointers.size < 2) pinch = null; drag = null; return; }
+  const d = drag; drag = null; if (!d) return;
+  if (d.moved) { if (d.type !== 'tap') { save(); if (d.type === 'opening' || d.type === 'defect') renderPanel(); } return; }
+  if (d.type === 'tap' && e.type === 'pointerup') onTap(toWorld(e), e);
+}
+svg.addEventListener('pointerup', endPointer);
+svg.addEventListener('pointercancel', endPointer);
+svg.addEventListener('wheel', e => { e.preventDefault(); const R = stage.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - R.left, e.clientY - R.top); }, { passive: false });
+
+function traceSnap(w) {
+  const t = app.trace, P = t.pts; if (!P.length) return w;
+  const z = app.view.zoom;
+  if (P.length >= 3 && V.dist(w, P[0]) < 16 / z) return { ...P[0] };
+  if (t.ortho) {
+    const last = P[P.length - 1], ref = P.length >= 2 ? Math.atan2(P[1].y - P[0].y, P[1].x - P[0].x) : 0;
+    const v = V.sub(w, last), ang = Math.atan2(v.y, v.x), q = Math.round((ang - ref) / (Math.PI / 2)) * (Math.PI / 2) + ref;
+    if (Math.abs(ang - q) < 0.17 || Math.abs(Math.abs(ang - q) - 2 * Math.PI) < 0.17) { const l = V.len(v); return { x: last.x + Math.cos(q) * l, y: last.y + Math.sin(q) * l }; }
+  }
+  return w;
+}
+function onTap(w, e) {
+  const L = lvl(), z = app.view.zoom;
+  if (app.calib) {
+    app.calib.pts.push(w); draw();
+    if (app.calib.pts.length === 2) {
+      setTimeout(() => {
+        const [p1, p2] = app.calib.pts, dImg = V.dist(p1, p2);
+        const s = prompt('Longueur réelle entre ces 2 points, en mètres (ex. 4,35) :');
+        const D = parseNum(s);
+        if (D > 0 && dImg > 0) {
+          mutate(() => { const b = L.bg, f = D / dImg; b.x = p1.x + (b.x - p1.x) * f; b.y = p1.y + (b.y - p1.y) * f; b.w *= f; });
+          toast('Échelle calibrée : l\'image est maintenant à la bonne taille.'); app.calib = null; renderBg(); fitView();
+        } else { app.calib = null; draw(); toast('Calibrage annulé'); }
+        renderPanel(); hint();
+      }, 30);
+    }
+    return;
+  }
+  if (app.tool === 'trace') {
+    const t = app.trace || (app.trace = { pts: [], ortho: true, hover: null });
+    const p = traceSnap(w);
+    if (t.pts.length >= 3 && V.dist(p, t.pts[0]) < 1e-6) return finishTrace();
+    t.pts.push(p); draw(); renderPanel(); return;
+  }
+  if (app.tool === 'door' || app.tool === 'window') {
+    const hit = nearestWall(L, w, 18 / z);
+    if (!hit) return toast('Touchez un mur (le trait épais gris) pour y placer l\'ouverture.');
+    const type = app.tool === 'door' ? 'porte' : 'fenetre', T0 = OPEN_T[type], ww = Math.min(T0.w, hit.len * 0.9);
+    const op = { id: uid(), type, wall: hit.i, off: r2(clamp(hit.along - ww / 2, 0, hit.len - ww)), w: ww, h: T0.h, sill: T0.sill, swing: 'in', hinge: 'L' };
+    mutate(() => hit.r.openings.push(op));
+    selectObj({ kind: 'opening', id: op.id }); return;
+  }
+  if (app.tool === 'defect') {
+    const d = { id: uid(), x: w.x, y: w.y, cat: 'fissure', sev: 2, desc: '', action: '', qty: '', unit: 'm²', photos: [], date: new Date().toISOString().slice(0, 10) };
+    mutate(() => L.defects.push(d)); selectObj({ kind: 'defect', id: d.id }); return;
+  }
+  if (app.tool === 'select') { selectObj(null); }
+}
+function finishTrace() {
+  const t = app.trace; if (!t || t.pts.length < 3) return toast('Il faut au moins 3 coins.');
+  const r = roomFromPts('Pièce ' + (lvl().rooms.length + 1), t.pts);
+  app.trace = null; mutate(() => lvl().rooms.push(r));
+  setTool('select'); selectObj({ kind: 'room', id: r.id });
+  toast('Pièce créée. Remplacez maintenant les cotes ≈ par vos mesures.');
+}
+function selObj() { const s = app.sel; if (!s) return null; if (s.kind === 'room') return findRoom(s.id); if (s.kind === 'defect') return findDefect(s.id); if (s.kind === 'opening') return findOpening(s.id); return null; }
+function selectObj(s) {
+  app.sel = s; app.hl = null; if (s) { app.panelMode = null; app.panelOpen = true; }
+  renderPanel(); draw();
+}
+function setTool(t) {
+  if (t === 'room') { app.tool = 'select'; app.trace = null; app.calib = null; app.panelMode = 'addRoom'; app.sel = null; app.panelOpen = true; ui(); return; }
+  app.tool = t; app.panelMode = null; app.calib = null;
+  if (t !== 'trace') app.trace = null; else app.trace = { pts: [], ortho: true, hover: null };
+  if (['trace', 'bg', 'ai'].includes(t)) { app.sel = null; app.panelOpen = true; }
+  ui();
+}
+const HINTS = {
+  select: '', door: 'Touchez un mur pour y placer une porte', window: 'Touchez un mur pour y placer une fenêtre',
+  defect: 'Touchez l\'endroit du désordre sur le plan', trace: 'Touchez chaque coin de la pièce, dans l\'ordre. Touchez le 1er coin pour fermer.',
+  bg: 'Faites glisser l\'image pour la placer', ai: '',
+};
+function hint() { $('#hint').textContent = app.calib ? (app.calib.pts.length ? 'Touchez le 2e point de la longueur connue' : 'Touchez le 1er point d\'une longueur connue sur l\'image') : (app.tab === 'plan' ? HINTS[app.tool] || '' : ''); }
+
+// ---------- Rendu de l'interface ----------
+function ui() {
+  if (!app.project) return;
+  const P = app.project;
+  $('#pname').textContent = P.name || 'Sans titre';
+  $('#lvlSel').innerHTML = P.levels.map((L, i) => `<option value="${i}" ${i === app.levelIdx ? 'selected' : ''}>${esc(L.name)}</option>`).join('');
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === app.tab));
+  document.querySelectorAll('.tool').forEach(b => b.classList.toggle('on', b.dataset.v === app.tool && !(app.panelMode === 'addRoom') || (b.dataset.v === 'room' && app.panelMode === 'addRoom')));
+  svg.className.baseVal = (app.tool === 'bg' ? 'bgmode ' : '') + 'tool-' + app.tool;
+  $('#northG').setAttribute('transform', `rotate(${P.north || 0})`);
+  const pv = $('#pageView');
+  $('#panel').style.display = app.tab === 'plan' ? '' : 'none';
+  if (app.tab === 'plan') { pv.style.display = 'none'; }
+  else { pv.style.display = 'block'; if (app.tab === 'metres') renderMetres(); else if (app.tab === 'desordres') renderDefectsView(); else renderReportView(); }
+  const L = lvl(); const empty = !L.rooms.length && !L.defects.length && !(L.bg && L.bg.show) && !app.trace && app.tool === 'select' && app.panelMode !== 'addRoom';
+  $('#empty').style.display = empty ? 'block' : 'none';
+  if (empty) $('#empty').innerHTML = `<h3>Niveau « ${esc(L.name)} » vide</h3><p>Par où commencer ? Vous pouvez combiner les trois.</p>
+    <div class="row"><button class="btn pri" data-act="tool" data-v="room">➕ Ajouter une pièce</button><button class="btn" data-act="tool" data-v="bg">🖼️ Croquis en fond</button><button class="btn" data-act="tool" data-v="ai">✨ Analyse IA</button></div>`;
+  renderBg(); updateViewBox(); draw(); renderPanel(); hint();
+}
+function renderPanel() {
+  const body = $('#panelBody'), panel = $('#panel');
+  let h = '', title = '';
+  const s = app.sel, o = selObj();
+  if (app.tool === 'trace') { h = tracePanel(); title = 'Tracé en cours'; }
+  else if (app.tool === 'bg') { h = bgPanel(); title = 'Fond de calque'; }
+  else if (app.tool === 'ai') { h = aiPanel(); title = 'Analyse IA'; }
+  else if (app.panelMode === 'addRoom') { h = addRoomPanel(); title = 'Ajouter une pièce'; }
+  else if (s && o && s.kind === 'room') { h = roomPanel(o); title = o.name; }
+  else if (s && o && s.kind === 'opening') { h = openingPanel(o.r, o.o); title = OPEN_T[o.o.type].l; }
+  else if (s && o && s.kind === 'defect') { h = defectPanel(o); title = 'Désordre n° ' + defectNumbers().get(o.id); }
+  else { h = overviewPanel(); title = lvl().name + ' · résumé'; }
+  body.innerHTML = h;
+  $('#panelHandle').textContent = title;
+  panel.classList.toggle('closed', !app.panelOpen);
+}
+
+// --- Panneau : résumé du niveau et liste des choses à faire
+function overviewPanel() {
+  const L = lvl(), P = app.project; let A = 0, ok = 0, tot = 0; const todo = [];
+  L.rooms.forEach(r => {
+    const m = roomMetrics(r), pr = precision(r); A += m.A; ok += pr.ok; tot += pr.tot;
+    if (m.err) todo.push(`<li data-act="selRoom" data-id="${r.id}">⚠️ <b>${esc(r.name)}</b> : mesures incohérentes</li>`);
+    else if (pr.ok < pr.tot) todo.push(`<li data-act="selRoom" data-id="${r.id}">📏 <b>${esc(r.name)}</b> : ${pr.tot - pr.ok} cote(s) à mesurer</li>`);
+    if (m.ctrl && Math.abs(m.ctrl.diff) > 0.05) todo.push(`<li data-act="selRoom" data-id="${r.id}">📐 <b>${esc(r.name)}</b> : contrôle hors tolérance (${fmt(Math.abs(m.ctrl.diff) * 100, 0)} cm)</li>`);
+    if (!r.h.m) todo.push(`<li data-act="selRoom" data-id="${r.id}">↕️ <b>${esc(r.name)}</b> : hauteur sous plafond à mesurer</li>`);
+  });
+  const nums = defectNumbers();
+  L.defects.filter(d => d.place).forEach(d => todo.push(`<li data-act="selDefect" data-id="${d.id}">📍 Désordre n° ${nums.get(d.id)} à placer sur le plan</li>`));
+  const pct = tot ? Math.round(ok / tot * 100) : 0;
+  const days = P.lastExport ? Math.floor((Date.now() - P.lastExport) / 86400000) : null;
+  return `<h3>${esc(L.name)}</h3>
+  <div class="kpi"><div><b>${L.rooms.length}</b><span>pièces</span></div><div><b>${fmt(A, 1)}</b><span>m² habitables</span></div><div><b>${L.defects.length}</b><span>désordres</span></div></div>
+  ${tot ? `<div class="msg ${pct === 100 ? 'ok' : 'warn'}">Précision du relevé : <b>${pct} %</b> des cotes sont mesurées sur place${pct < 100 ? '. Les cotes marquées ≈ sont des estimations.' : '. Plan exploitable pour un chiffrage.'}</div>` : ''}
+  ${todo.length ? `<h4>À faire</h4><ul class="todo">${todo.slice(0, 14).join('')}</ul>` : (L.rooms.length ? '<div class="msg ok">Toutes les pièces sont mesurées. ✓</div>' : '')}
+  <h4>Méthode conseillée</h4>
+  <ol class="hint" style="padding-left:18px">
+    <li><b>Ébauche</b> : ajoutez les pièces (➕), tracez-les sur un croquis (🖼️ puis ✏️) ou laissez l'IA lire le croquis (✨).</li>
+    <li><b>Mesures</b> : pièce par pièce, remplacez chaque cote ≈ par la valeur du télémètre ou du mètre.</li>
+    <li><b>Assemblage</b> : faites glisser les pièces, elles s'aimantent mur contre mur.</li>
+    <li><b>Ouvertures et désordres</b> : 🚪 🪟 ⚠️, avec photos.</li>
+    <li><b>Rapport</b> : onglet « Rapport PDF ».</li>
+  </ol>
+  <div class="msg ${days == null || days > 2 ? 'warn' : 'info'}">💾 ${days == null ? 'Projet jamais sauvegardé en fichier.' : 'Dernier fichier de sauvegarde : il y a ' + days + ' jour(s).'} Les données restent dans ce navigateur : exportez régulièrement le fichier projet (Menu › Sauvegarder).
+  <div class="row" style="margin-top:6px"><button class="btn sm" data-act="exportProject">💾 Sauvegarder le fichier</button></div></div>`;
+}
+
+// --- Panneau : ajout de pièce
+function addRoomPanel() {
+  return `<h3>Ajouter une pièce</h3><p class="hint">Choisissez la forme la plus proche. Vous saisirez ensuite les mesures.</p>
+  <label class="field"><span>Nom</span><input id="newRoomName" value="${esc(ROOM_NAMES[2])} ${lvl().rooms.length + 1}"></label>
+  <div class="row" style="margin:-2px 0 10px">${ROOM_NAMES.map(n => `<button class="chip" data-act="newRoomName" data-v="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+  <div class="card"><b>▭ Rectangle</b><p class="hint">2 mesures + 1 diagonale de contrôle. Pour les pièces aux murs d'équerre.</p><button class="btn pri full" data-act="createRoom" data-v="rect">Créer un rectangle</button></div>
+  <div class="card"><b>⏢ Quatre murs pas d'équerre</b><p class="hint">4 murs + 2 diagonales. Recommandé pour les bâtiments anciens : les angles sont rarement droits.</p><button class="btn full" data-act="createRoom" data-v="quad">Créer un quadrilatère</button></div>
+  <div class="card"><b>⌐ Pièce en L</b><p class="hint">6 murs + 3 diagonales depuis l'angle rentrant.</p><button class="btn full" data-act="createRoom" data-v="L">Créer une pièce en L</button></div>
+  <div class="card"><b>✏️ Autre forme</b><p class="hint">Touchez les coins un par un sur le plan (idéal par-dessus un croquis ou une photo en fond).</p><button class="btn full" data-act="tool" data-v="trace">Tracer à la main</button></div>
+  <button class="btn full" data-act="cancelPanel">Annuler</button>`;
+}
+
+// --- Panneau : pièce sélectionnée
+function schematic(r) {
+  const g = solveRoom(r), P = g.pts.map(p => V.rot(p, r.rot)), n = P.length, b = bbox(P);
+  const Wd = 320, Hd = 190, pad = 30, k = Math.min((Wd - 2 * pad) / Math.max(0.1, b.maxx - b.minx), (Hd - 2 * pad) / Math.max(0.1, b.maxy - b.miny));
+  const ox = (Wd - (b.maxx - b.minx) * k) / 2, oy = (Hd - (b.maxy - b.miny) * k) / 2;
+  const S = p => ({ x: ox + (p.x - b.minx) * k, y: oy + (p.y - b.miny) * k }), Q = P.map(S), hl = app.hl;
+  let s = `<svg viewBox="0 0 ${Wd} ${Hd}"><polygon points="${pstr(Q)}" fill="#fff" stroke="none"/>`;
+  const seg = (a, c, key, col, dash, label, lpos) => {
+    const on = hl === key; s += `<line x1="${f4(a.x)}" y1="${f4(a.y)}" x2="${f4(c.x)}" y2="${f4(c.y)}" stroke="${on ? '#e0322b' : col}" stroke-width="${on ? 5 : dash ? 1.6 : 3}" ${dash && !on ? 'stroke-dasharray="5 4"' : ''} stroke-linecap="round"/>`;
+    if (label) s += `<text x="${f4(lpos.x)}" y="${f4(lpos.y)}" font-size="12" font-weight="700" text-anchor="middle" dominant-baseline="central" fill="${on ? '#e0322b' : col}" ${FONT}>${label}</text>`;
+  };
+  if (r.mode === 'rect') {
+    seg(Q[0], Q[2], 'D', '#1f8a4c', true, 'diag.', V.add(V.mul(V.add(Q[0], Q[2]), 0.5), { x: 0, y: -9 }));
+  } else {
+    const at = (a, c, k) => V.add(a, V.mul(V.sub(c, a), k));
+    r.poly.diags.forEach((_, i) => seg(Q[0], Q[i + 2], 'd' + i, '#2c6fbb', true, 'd' + (i + 1), at(Q[0], Q[i + 2], 0.7)));
+    if (n === 4) seg(Q[1], Q[3], 'c', '#1f8a4c', true, 'ctrl', at(Q[1], Q[3], 0.28));
+  }
+  for (let i = 0; i < n; i++) {
+    const a = Q[i], c = Q[(i + 1) % n], d = V.norm(V.sub(c, a)), no = { x: d.y, y: -d.x }, lp = V.add(V.mul(V.add(a, c), 0.5), V.mul(no, 13));
+    const key = r.mode === 'rect' ? (i % 2 ? 'W' : 'L') : 's' + i, faded = r.mode === 'rect' && i >= 2;
+    seg(a, c, key, faded ? '#9aa9ad' : '#1d2528', false, letter(i) + (faded ? (i === 2 ? '=A' : '=B') : ''), lp);
+  }
+  Q.forEach((p, i) => { s += `<circle cx="${f4(p.x)}" cy="${f4(p.y)}" r="9" fill="#0a8ea3"/><text x="${f4(p.x)}" y="${f4(p.y)}" font-size="10.5" font-weight="700" fill="#fff" text-anchor="middle" dominant-baseline="central" ${FONT}>${i + 1}</text>`; });
+  return s + '</svg>';
+}
+function measField(m) {
+  const o = m.o, has = o.v > 0;
+  return `<label class="mf ${app.hl === m.k ? 'hl' : ''}" data-key="${m.k}"><span class="ml">${m.lab}<small>${m.sub}</small></span>
+    <input class="num" inputmode="decimal" autocomplete="off" data-in="meas" data-k="${m.k}" value="${has ? fmt(o.v) : ''}" placeholder="${m.opt ? 'option.' : '0,00'}">
+    <span class="st ${o.m ? 'ok' : 'est'}" data-st="${m.k}">${o.m ? '✓ mesuré' : (has ? '≈ estimé' : 'à mesurer')}</span></label>`;
+}
+function roomDerived(r) {
+  const m = roomMetrics(r), pr = precision(r);
+  let h = `<div class="row" style="margin:6px 0"><span class="badge ${pr.ok === pr.tot ? 'b-ok' : 'b-est'}">${pr.ok}/${pr.tot} cotes mesurées</span>
+    <span class="badge ${m.err ? 'b-bad' : 'b-ok'}">${fmt(m.A)} m² · périmètre ${fmt(m.P)} m</span></div>`;
+  if (m.err) h += `<div class="msg bad">⚠️ ${esc(m.err)}</div>`;
+  if (m.ctrl) {
+    const cm = Math.abs(m.ctrl.diff) * 100;
+    if (r.mode === 'rect') {
+      h += cm <= 2 ? `<div class="msg ok">✓ Pièce d'équerre : écart de ${fmt(cm, 1)} cm sur la diagonale.</div>`
+        : cm <= 5 ? `<div class="msg warn">Légèrement hors d'équerre (${fmt(cm, 1)} cm). Acceptable pour un relevé courant.</div>`
+          : `<div class="msg bad">⚠️ Pièce hors d'équerre : ${fmt(cm, 1)} cm d'écart. Passez en mode « murs pas d'équerre » et mesurez les 4 murs.<div class="row" style="margin-top:6px"><button class="btn sm" data-act="toPoly">Passer en 4 murs</button></div></div>`;
+    } else {
+      h += cm <= 3 ? `<div class="msg ok">✓ Relevé cohérent : la diagonale de contrôle confirme les mesures (écart ${fmt(cm, 1)} cm).</div>`
+        : `<div class="msg bad">⚠️ Incohérence de ${fmt(cm, 1)} cm entre la diagonale de contrôle et les autres mesures. Une mesure est probablement fausse : remesurez.</div>`;
+    }
+  }
+  return h;
+}
+function roomPanel(r) {
+  const nW = r.mode === 'rect' ? 4 : r.poly.sides.length;
+  return `<input class="titleIn" data-in="roomName" value="${esc(r.name)}" aria-label="Nom de la pièce">
+  <div class="row" style="margin:6px 0">${ROOM_NAMES.slice(0, 9).map(n => `<button class="chip" data-act="setRoomName" data-v="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+  <div id="roomDerived">${roomDerived(r)}</div>
+  <div class="schem" id="schem">${schematic(r)}</div>
+  <p class="hint">Mesurez au ras du sol, d'un coin à l'autre, mur nu (sans plinthe). Coin 1 : le rond n° 1 sur le plan, puis tournez dans le sens des aiguilles d'une montre.${r.mode === 'poly' && nW > 4 ? ' Pour une pièce en L, le coin 1 est l\'angle rentrant.' : ''}</p>
+  ${measList(r).map(measField).join('')}
+  <h4>Hauteur et murs</h4>
+  ${measField({ k: 'h', lab: 'Hauteur sous plafond', sub: 'du sol au plafond', o: r.h })}
+  <label class="mf"><span class="ml">Épaisseur des murs<small>bloc béton courant : 0,20 m</small></span><input class="num" inputmode="decimal" data-in="roomT" value="${fmt(r.t)}"><span></span></label>
+  <h4>Portes et fenêtres (${r.openings.length})</h4>
+  ${r.openings.map(o => `<div class="row" style="justify-content:space-between;margin:3px 0"><span>${OPEN_T[o.type].l} · mur ${letter(o.wall)} · ${fmt(o.w)} m</span><button class="btn sm" data-act="selOpening" data-id="${o.id}">Modifier</button></div>`).join('')}
+  <div class="row"><button class="btn sm" data-act="addOpening" data-v="porte">🚪 + Porte</button><button class="btn sm" data-act="addOpening" data-v="fenetre">🪟 + Fenêtre</button><button class="btn sm" data-act="addOpening" data-v="baie">+ Porte-fenêtre</button></div>
+  <p class="hint">Astuce : outil 🚪 ou 🪟 puis touchez directement le mur sur le plan.</p>
+  <h4>Position</h4>
+  <div class="row"><button class="btn sm" data-act="rot" data-v="-90">⟲ 90°</button><button class="btn sm" data-act="rot" data-v="-1">⟲ 1°</button><button class="btn sm" data-act="rot" data-v="1">⟳ 1°</button><button class="btn sm" data-act="rot" data-v="90">⟳ 90°</button></div>
+  <p class="hint">Faites glisser la pièce sur le plan : elle s'aimante contre les pièces voisines en laissant l'épaisseur du mur.</p>
+  <h4>Forme</h4>
+  <div class="row">${r.mode === 'rect' ? '<button class="btn sm" data-act="toPoly">Murs pas d\'équerre (4 murs)</button>' : (nW === 4 ? '<button class="btn sm" data-act="toRect">Revenir au rectangle</button>' : '')}
+  <button class="btn sm" data-act="dupRoom">Dupliquer</button><button class="btn sm warn" data-act="delRoom">Supprimer</button></div>`;
+}
+function openingPanel(r, o) {
+  const n = r.mode === 'rect' ? 4 : r.poly.sides.length;
+  return `<h3>${OPEN_T[o.type].l} · ${esc(r.name)}</h3>
+  <div class="seg" style="margin:8px 0">${Object.entries(OPEN_T).map(([k, t]) => `<button class="${o.type === k ? 'on' : ''}" data-act="opType" data-v="${k}">${t.l}</button>`).join('')}</div>
+  <label class="field"><span>Mur</span><select data-in="op" data-k="wall">${Array.from({ length: n }, (_, i) => `<option value="${i}" ${o.wall === i ? 'selected' : ''}>Mur ${letter(i)} (coin ${i + 1} → ${(i + 1) % n + 1})</option>`).join('')}</select></label>
+  <label class="mf"><span class="ml">Distance depuis le coin ${o.wall + 1}<small>jusqu'au bord de l'ouverture</small></span><input class="num" inputmode="decimal" data-in="op" data-k="off" value="${fmt(o.off)}"><span>m</span></label>
+  <label class="mf"><span class="ml">Largeur<small>tableau, sans le cadre</small></span><input class="num" inputmode="decimal" data-in="op" data-k="w" value="${fmt(o.w)}"><span>m</span></label>
+  <label class="mf"><span class="ml">Hauteur</span><input class="num" inputmode="decimal" data-in="op" data-k="h" value="${fmt(o.h)}"><span>m</span></label>
+  ${o.type === 'fenetre' ? `<label class="mf"><span class="ml">Allège<small>du sol au bas de la fenêtre</small></span><input class="num" inputmode="decimal" data-in="op" data-k="sill" value="${fmt(o.sill)}"><span>m</span></label>` : ''}
+  ${o.type === 'porte' || o.type === 'baie' ? `<h4>Sens d'ouverture</h4>
+  <div class="seg" style="margin-bottom:6px"><button class="${o.swing !== 'out' ? 'on' : ''}" data-act="opSet" data-k="swing" data-v="in">Vers l'intérieur</button><button class="${o.swing === 'out' ? 'on' : ''}" data-act="opSet" data-k="swing" data-v="out">Vers l'extérieur</button></div>
+  ${o.type === 'porte' ? `<div class="seg"><button class="${o.hinge !== 'R' ? 'on' : ''}" data-act="opSet" data-k="hinge" data-v="L">Charnière côté coin ${o.wall + 1}</button><button class="${o.hinge === 'R' ? 'on' : ''}" data-act="opSet" data-k="hinge" data-v="R">Charnière côté coin ${(o.wall + 1) % n + 1}</button></div>` : ''}` : ''}
+  <p class="hint">Vous pouvez aussi faire glisser l'ouverture le long du mur avec l'outil ✋.</p>
+  <div class="row" style="margin-top:10px"><button class="btn sm" data-act="selRoom" data-id="${r.id}">← Retour à la pièce</button><button class="btn sm warn" data-act="delOpening">Supprimer</button></div>`;
+}
+function defectPanel(d) {
+  const nums = defectNumbers(), photos = d.photos.map(id => app.project.photos[id] ? `<div class="th"><img src="${app.project.photos[id]}" data-act="viewPhoto" data-id="${id}"><button data-act="delPhoto" data-id="${id}" title="Retirer">✕</button></div>` : '').join('');
+  return `<h3>Désordre n° ${nums.get(d.id)}</h3>
+  ${d.place ? '<div class="msg warn">📍 Faites glisser ce repère (cercle pointillé) à son emplacement réel sur le plan.</div>' : ''}
+  <label class="field"><span>Type</span><select data-in="df" data-k="cat">${Object.entries(CATS).map(([k, c]) => `<option value="${k}" ${d.cat === k ? 'selected' : ''}>${c.i} ${c.l}</option>`).join('')}</select></label>
+  <span class="hint">Gravité</span>
+  <div class="seg" style="margin:4px 0 8px">${Object.entries(SEV).map(([k, s]) => `<button class="${d.sev == k ? 'on' : ''}" style="${d.sev == k ? `background:${s.c}` : ''}" data-act="dfSev" data-v="${k}">${s.l}</button>`).join('')}</div>
+  <label class="field"><span>Constat (ce que l'on voit, dimensions)</span><textarea data-in="df" data-k="desc" placeholder="Ex. fissure en escalier de 2 mm, sous la fenêtre, traversante">${esc(d.desc)}</textarea></label>
+  <label class="field"><span>Travaux préconisés</span><textarea data-in="df" data-k="action" placeholder="Ex. purger le béton, traiter les armatures, ragréer">${esc(d.action)}</textarea></label>
+  <div class="row"><label class="field" style="flex:1"><span>Quantité estimée</span><input inputmode="decimal" data-in="df" data-k="qty" value="${esc(d.qty)}"></label>
+  <label class="field" style="width:110px"><span>Unité</span><select data-in="df" data-k="unit">${UNITS.map(u => `<option ${d.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select></label></div>
+  <h4>Photos (${d.photos.length})</h4><div class="thumbs">${photos}</div>
+  <div class="row" style="margin-top:8px"><button class="btn sm" data-act="addDefectPhoto">📷 Ajouter une photo</button></div>
+  <div class="row" style="margin-top:14px"><button class="btn sm warn" data-act="delDefect">Supprimer ce désordre</button></div>`;
+}
+function tracePanel() {
+  const t = app.trace || { pts: [] };
+  return `<h3>✏️ Tracer une pièce</h3>
+  <p class="hint">Touchez les coins de la pièce les uns après les autres, puis le 1er coin pour fermer. Les longueurs tracées sont des estimations (≈) que vous remplacerez par vos mesures.</p>
+  <div class="msg info">${t.pts.length} coin(s) posé(s)</div>
+  <label class="row" style="margin:8px 0"><input type="checkbox" data-in="traceOrtho" ${t.ortho ? 'checked' : ''}> Angles droits automatiques</label>
+  <div class="row"><button class="btn pri" data-act="finishTrace" ${t.pts.length < 3 ? 'disabled' : ''}>Terminer la pièce</button><button class="btn" data-act="traceUndo" ${!t.pts.length ? 'disabled' : ''}>Retirer le dernier coin</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn" data-act="tool" data-v="select">Abandonner</button></div>
+  <p class="hint">Glissez avec un doigt pour déplacer la vue, pincez pour zoomer.</p>`;
+}
+function bgPanel() {
+  const b = lvl().bg;
+  if (!b) return `<h3>🖼️ Croquis ou photo en fond</h3>
+    <p class="hint">Importez un croquis fait à la main, un ancien plan, une photo aérienne ou une vue de dessus. Vous pourrez ensuite tracer les pièces par-dessus.</p>
+    <button class="btn pri full" data-act="importBg">📷 Choisir une image</button>
+    <div class="msg warn" style="margin-top:10px">Une photo n'a pas d'échelle. Après l'import, utilisez « Calibrer l'échelle » avec une longueur que vous avez mesurée sur place (un mur, une porte).</div>`;
+  return `<h3>🖼️ Fond de calque</h3>
+  <p class="hint">Faites glisser l'image sur le plan pour la placer.</p>
+  <button class="btn pri full" data-act="calib">📏 Calibrer l'échelle (2 points + 1 mesure)</button>
+  <label class="field"><span>Transparence</span><input type="range" min="0.1" max="1" step="0.05" value="${b.op}" data-in="bg" data-k="op"></label>
+  <label class="field"><span>Rotation : ${fmt(b.rot, 0)}°</span><input type="range" min="-180" max="180" step="0.5" value="${b.rot}" data-in="bg" data-k="rot"></label>
+  <label class="field"><span>Largeur de l'image sur le terrain (m)</span><input inputmode="decimal" data-in="bg" data-k="w" value="${fmt(b.w)}"></label>
+  <label class="row" style="margin:8px 0"><input type="checkbox" data-in="bgShow" ${b.show ? 'checked' : ''}> Afficher le fond</label>
+  <div class="row"><button class="btn" data-act="tool" data-v="trace">✏️ Tracer une pièce dessus</button><button class="btn" data-act="importBg">Changer d'image</button><button class="btn warn" data-act="delBg">Retirer</button></div>`;
+}
+
+// --- Panneau : analyse IA
+function aiPanel() {
+  const a = app.ai, st = app.settings, hasKey = !!st.apiKey;
+  let h = `<h3>✨ Analyse IA d'un croquis ou d'une photo</h3>
+  <p class="hint">L'IA (Claude, d'Anthropic) lit un croquis, un plan ancien ou une photo et propose une ébauche : pièces, ouvertures, désordres visibles. <b>Toutes ses cotes sont marquées ≈</b> : c'est une base de travail, pas un relevé.</p>`;
+  if (!hasKey) return h + `<div class="msg warn">Il faut une clé API Anthropic (payante à l'usage, environ 0,05 à 0,20 $ par analyse). Elle reste enregistrée sur cet appareil uniquement.</div>
+    <label class="field"><span>Clé API (commence par sk-ant-)</span><input type="password" id="keyIn" autocomplete="off" placeholder="sk-ant-..."></label>
+    <button class="btn pri full" data-act="saveKey">Enregistrer la clé</button>
+    <p class="hint">Obtenir une clé : console.anthropic.com › API Keys. Une connexion internet est nécessaire pour l'analyse ; tout le reste de l'application fonctionne hors ligne.</p>`;
+  h += `<div class="thumbs" style="margin:8px 0">${a.files.map((f, i) => `<div class="th"><img src="${f.data}"><button data-act="aiDelFile" data-v="${i}">✕</button></div>`).join('')}</div>
+  <button class="btn full" data-act="aiAddFile" ${a.busy ? 'disabled' : ''}>📷 Ajouter une image (croquis, plan, photo)</button>
+  <label class="field"><span>Indications utiles (facultatif)</span><textarea id="aiHint" data-in="aiHint" placeholder="Ex. maison de plain-pied à Anse Royale, la façade avant mesure environ 11 m, 3 chambres. Les cotes écrites sont en mètres.">${esc(a.hint)}</textarea></label>
+  <button class="btn pri full" data-act="aiRun" ${!a.files.length || a.busy ? 'disabled' : ''}>${a.busy ? '<span class="spin"></span> Analyse en cours… <span id="aiSec">0</span> s' : 'Analyser'}</button>`;
+  if (a.err) h += `<div class="msg bad">${esc(a.err)}</div>`;
+  if (a.result) {
+    const R = a.result;
+    h += `<h4>Résultat</h4><div class="msg info"><b>Échelle :</b> ${esc(R.echelle)}</div>${R.remarques ? `<div class="msg warn">${esc(R.remarques)}</div>` : ''}
+    ${R.pieces.length ? `<div class="card"><b>${R.pieces.length} pièce(s)</b><ul style="margin:4px 0;padding-left:18px">${R.pieces.map(p => `<li>${esc(p.nom)} · ≈${fmt(Math.abs(area(p.sommets)))} m² · ${p.ouvertures.length} ouverture(s)</li>`).join('')}</ul></div>` : ''}
+    ${R.desordres.length ? `<div class="card"><b>${R.desordres.length} désordre(s) repéré(s)</b><ul style="margin:4px 0;padding-left:18px">${R.desordres.map(d => `<li>${(CATS[d.categorie] || CATS.autre).i} ${esc(d.description)}</li>`).join('')}</ul></div>` : ''}
+    <div class="row"><button class="btn pri" data-act="aiApply" ${!R.pieces.length && !R.desordres.length ? 'disabled' : ''}>Ajouter au plan</button><button class="btn" data-act="aiClear">Effacer</button></div>`;
+  }
+  h += `<h4>Réglages</h4><div class="row"><select data-in="aiModel" class="btn sm"><option value="claude-opus-5-5" ${st.model === 'claude-opus-5-5' ? 'selected' : ''}>Claude Opus 5.5 (le plus précis)</option><option value="claude-sonnet-5-5" ${st.model === 'claude-sonnet-5-5' ? 'selected' : ''}>Claude Sonnet 5.5 (moins cher)</option></select><button class="btn sm" data-act="forgetKey">Oublier la clé</button></div>`;
+  return h;
+}
+
+// ---------- Vues Métrés / Désordres / Rapport ----------
+function metresTable(L, cls = 't') {
+  let T = { A: 0, P: 0, wg: 0, op: 0, wn: 0, pl: 0, v: 0 };
+  const rows = L.rooms.map(r => {
+    const m = roomMetrics(r); T.A += m.A; T.P += m.P; T.wg += m.wallGross; T.op += m.opA; T.wn += m.wallNet; T.pl += m.plinthe; T.v += m.vol;
+    return `<tr><td class="l">${esc(r.name)}</td><td>${fmt(m.A)}</td><td>${fmt(m.P)}</td><td>${fmt(r.h.v)}</td><td>${fmt(m.wallGross)}</td><td>${fmt(m.opA)}</td><td>${fmt(m.wallNet)}</td><td>${fmt(m.plinthe)}</td><td>${fmt(m.vol, 1)}</td><td>${m.est ? '≈ ' + m.est : '✓'}</td></tr>`;
+  }).join('');
+  return { T, html: `<table class="${cls}"><thead><tr><th class="l">Pièce</th><th>Sol / plafond m²</th><th>Périmètre m</th><th>HSP m</th><th>Murs bruts m²</th><th>Ouvertures m²</th><th>Murs nets m²</th><th>Plinthes ml</th><th>Volume m³</th><th>Cotes estimées</th></tr></thead>
+  <tbody>${rows}<tr class="tot"><td class="l">Total ${esc(L.name)}</td><td>${fmt(T.A)}</td><td>${fmt(T.P)}</td><td></td><td>${fmt(T.wg)}</td><td>${fmt(T.op)}</td><td>${fmt(T.wn)}</td><td>${fmt(T.pl)}</td><td>${fmt(T.v, 1)}</td><td></td></tr></tbody></table>` };
+}
+function openingsSummary(L) {
+  const g = {}; L.rooms.forEach(r => r.openings.forEach(o => { const k = OPEN_T[o.type].l + ' ' + fmt(o.w) + ' × ' + fmt(o.h); g[k] = (g[k] || 0) + 1; }));
+  const e = Object.entries(g); return e.length ? e.map(([k, n]) => `${n} × ${k} m`).join(' · ') : 'Aucune ouverture saisie.';
+}
+function renderMetres() {
+  const P = app.project; let gA = 0;
+  let h = `<div class="wrap"><div class="row" style="justify-content:space-between"><h2 style="margin:4px 0">Métrés et quantitatifs</h2><button class="btn pri" data-act="exportCSV">⬇︎ Exporter pour Excel (CSV)</button></div>
+  <p class="hint">Calculés à partir des cotes du plan. Murs nets = murs bruts − ouvertures (portes et fenêtres de la pièce). Plinthes = périmètre − largeur des portes. Les valeurs issues de cotes ≈ sont à confirmer avant de commander des matériaux.</p>`;
+  P.levels.forEach(L => { const m = metresTable(L); gA += m.T.A; h += `<h3>${esc(L.name)}</h3><div class="tblWrap">${m.html}</div><p class="hint">Ouvertures : ${openingsSummary(L)}</p>`; });
+  h += `<div class="msg info">Surface totale tous niveaux : <b>${fmt(gA)} m²</b> (surface intérieure, murs exclus).</div></div>`;
+  $('#pageView').innerHTML = h;
+}
+function renderDefectsView() {
+  const P = app.project, nums = defectNumbers(), all = [];
+  P.levels.forEach((L, li) => L.defects.forEach(d => all.push({ d, L, li })));
+  all.sort((a, b) => b.d.sev - a.d.sev || nums.get(a.d.id) - nums.get(b.d.id));
+  const cnt = s => all.filter(x => x.d.sev == s).length;
+  let h = `<div class="wrap"><h2 style="margin:4px 0">Désordres (${all.length})</h2>
+  <div class="row" style="margin:6px 0 12px">${Object.entries(SEV).reverse().map(([k, s]) => `<span class="badge" style="background:${s.c};color:#fff">${s.l} : ${cnt(k)}</span>`).join('')}</div>
+  ${all.length ? '' : '<p class="hint">Aucun désordre. Sur le plan, utilisez l\'outil ⚠️ Désordre et touchez l\'endroit concerné.</p>'}`;
+  h += all.map(({ d, L, li }) => { const ph = d.photos.find(id => P.photos[id]); return `<div class="dcard" data-act="gotoDefect" data-li="${li}" data-id="${d.id}">
+    <div class="dnum" style="background:${SEV[d.sev].c}">${nums.get(d.id)}</div>
+    <div><b>${CATS[d.cat].i} ${CATS[d.cat].l}</b> · <span class="hint">${esc(L.name)} · ${SEV[d.sev].l}${d.qty ? ' · ' + esc(d.qty) + ' ' + esc(d.unit) : ''}</span><div>${esc(d.desc) || '<i class="hint">Pas de constat saisi</i>'}</div>${d.action ? `<div class="hint">→ ${esc(d.action)}</div>` : ''}</div>
+    <div>${ph ? `<img src="${P.photos[ph]}">` : ''}</div></div>`; }).join('');
+  $('#pageView').innerHTML = h + '</div>';
+}
+function paperDims(o) { const D = { A4: [297, 210], A3: [420, 297] }[o.paper]; return o.orient === 'landscape' ? D : [D[1], D[0]]; }
+function scaleBar(scale) {
+  const Lm = [0.5, 1, 2, 5, 10, 20, 50, 100].find(l => l * 1000 / scale >= 25) || 100, mm = Lm * 1000 / scale;
+  let s = `<svg width="${f4(mm + 8)}mm" height="9mm" viewBox="-4 0 ${f4(mm + 8)} 9">`;
+  for (let i = 0; i < 4; i++) s += `<rect x="${f4(i * mm / 4)}" y="1" width="${f4(mm / 4)}" height="2" fill="${i % 2 ? '#fff' : '#111'}" stroke="#111" stroke-width="0.25"/>`;
+  return s + `<text x="0" y="7" font-size="2.6" text-anchor="middle" ${FONT}>0</text><text x="${f4(mm)}" y="7" font-size="2.6" text-anchor="middle" ${FONT}>${String(Lm).replace('.', ',')} m</text></svg>`;
+}
+function northSvg(deg) { return `<svg width="13mm" height="13mm" viewBox="-22 -22 44 44"><circle r="20" fill="none" stroke="#111" stroke-width="1"/><g transform="rotate(${deg || 0})"><path d="M0-7 5 12 0 8-5 12Z" fill="#111"/><text y="-12" font-size="10" text-anchor="middle" dominant-baseline="central" font-weight="700" ${FONT} fill="#111">N</text></g></svg>`; }
+function buildReport() {
+  const P = app.project, o = app.rep, [pw, ph] = paperDims(o), cw = pw - 20, ch = ph - 20, nums = defectNumbers();
+  $('#pageStyle').textContent = `@page{size:${o.paper} ${o.orient};margin:10mm}`;
+  const today = new Date().toLocaleDateString('fr-FR');
+  const head = t => `<div class="rp-h"><span><b>${esc(P.name)}</b>${P.address ? ' · ' + esc(P.address) : ''}</span><span>${esc(t)}</span></div>`;
+  let pages = '';
+  // Page de synthèse
+  let req = 0, ok = 0, totA = 0, nd = 0; P.levels.forEach(L => { L.rooms.forEach(r => { const pr = precision(r); req += pr.tot; ok += pr.ok; totA += roomMetrics(r).A; }); nd += L.defects.length; });
+  const cnt = s => P.levels.reduce((n, L) => n + L.defects.filter(d => d.sev == s).length, 0);
+  pages += `<section class="page" style="width:${cw}mm;min-height:${ch - 1}mm;padding:0">${head('Synthèse du relevé')}
+    <h1 style="font-size:20pt;margin:6mm 0 2mm">${esc(P.name)}</h1>
+    <p style="margin:0 0 5mm">${esc(P.address)}${P.client ? ' · Propriétaire / client : ' + esc(P.client) : ''}<br>Relevé du ${esc(P.date)} par ${esc(P.author || '—')} · Rapport édité le ${today}</p>
+    <table class="rp-t" style="width:auto;margin-bottom:5mm"><tr><th class="l">Niveaux</th><td>${P.levels.length}</td></tr><tr><th class="l">Pièces</th><td>${P.levels.reduce((n, L) => n + L.rooms.length, 0)}</td></tr>
+    <tr><th class="l">Surface intérieure totale</th><td>${fmt(totA)} m²</td></tr><tr><th class="l">Cotes mesurées sur site</th><td>${ok} / ${req} (${req ? Math.round(ok / req * 100) : 0} %)</td></tr>
+    <tr><th class="l">Désordres</th><td>${nd} : ${Object.entries(SEV).reverse().map(([k, s]) => `${cnt(k)} ${s.l.toLowerCase()}`).join(', ')}</td></tr></table>
+    <div class="rp-sec"><h2>Méthode et précision</h2><p style="margin:0">Relevé de l'état existant. Chaque pièce est mesurée par triangulation (murs et diagonales) au télémètre laser ou au mètre ruban ; les plans sont reconstitués à partir de ces mesures. Les cotes précédées de « ≈ » sont des estimations (lecture de croquis, de photo ou analyse automatique) et doivent être vérifiées sur site avant toute commande ou tout dimensionnement. Murs dessinés à l'épaisseur indiquée pour chaque pièce. Cotes en mètres.</p></div>
+    ${P.notes ? `<div class="rp-sec"><h2>Observations générales</h2><p style="margin:0;white-space:pre-wrap">${esc(P.notes)}</p></div>` : ''}
+  </section>`;
+  // Plans
+  if (o.plans) P.levels.forEach(L => {
+    if (!L.rooms.length && !L.defects.length) return;
+    const avW = cw, avH = ch - 4 - 8 - 30, pts = levelBBoxPts(L);
+    const b0 = bbox(pts); let scale = null, bb = null;
+    const fitFor = s => { const m = 48 * 0.25 * s / 1000; const B = { x: b0.minx - m, y: b0.miny - m, w: (b0.maxx - b0.minx) + 2 * m, h: (b0.maxy - b0.miny) + 2 * m }; return { B, ok: B.w * 1000 / s <= avW && B.h * 1000 / s <= avH }; };
+    if (o.scale === 'auto') { for (const s of SCALES) { const f = fitFor(s); if (f.ok) { scale = s; bb = f.B; break; } } if (!scale) { scale = 1000; bb = fitFor(1000).B; } }
+    else { scale = +o.scale; bb = fitFor(scale).B; }
+    const tooBig = !fitFor(scale).ok, u = 0.25 * scale / 1000;
+    const plan = `<svg xmlns="http://www.w3.org/2000/svg" width="${f4(bb.w * 1000 / scale)}mm" height="${f4(bb.h * 1000 / scale)}mm" viewBox="${f4(bb.x)} ${f4(bb.y)} ${f4(bb.w)} ${f4(bb.h)}">${svgPlan(L, { u, print: true, dims: true })}</svg>`;
+    pages += `<section class="page" style="width:${cw}mm;height:${ch - 1}mm">${head('Plan · ' + L.name)}
+      <div class="plan-area" style="height:${avH}mm">${plan}</div>
+      <div class="cart"><div><b>${esc(P.name)}</b><br>${esc(P.address)}<br>${P.client ? 'Client : ' + esc(P.client) : ''}</div>
+      <div>Relevé de l'existant<br><b>${esc(L.name)}</b><br>Échelle <b>1:${scale}</b>${tooBig ? ' <span style="color:#c00">(dépasse la feuille)</span>' : ''}</div>
+      <div>Date : ${esc(P.date)}<br>Auteur : ${esc(P.author || '—')}<br><span style="color:#c45f00">≈ cote estimée, à vérifier</span></div>
+      <div>${northSvg(P.north)}${scaleBar(scale)}</div></div></section>`;
+  });
+  // Métrés
+  if (o.metres) {
+    let t = ''; P.levels.forEach(L => { if (!L.rooms.length) return; t += `<div class="rp-sec"><h2>${esc(L.name)}</h2>${metresTable(L, 'rp-t').html}<p style="margin:1.5mm 0 0;font-size:8.5pt">Ouvertures : ${openingsSummary(L)}</p></div>`; });
+    if (t) pages += `<section class="page flow" style="width:${cw}mm">${head('Métrés')}${t}<p style="font-size:8pt;color:#555">Murs nets = murs bruts − ouvertures. Plinthes = périmètre − largeur des portes. HSP = hauteur sous plafond.</p></section>`;
+  }
+  // Désordres
+  if (o.desordres && nd) {
+    const all = []; P.levels.forEach(L => L.defects.forEach(d => all.push({ d, L })));
+    all.sort((a, b) => b.d.sev - a.d.sev || nums.get(a.d.id) - nums.get(b.d.id));
+    pages += `<section class="page flow" style="width:${cw}mm">${head('Relevé des désordres')}<table class="rp-t"><thead><tr><th>N°</th><th class="l">Niveau</th><th class="l">Type</th><th class="l">Gravité</th><th class="l">Constat</th><th class="l">Travaux préconisés</th><th>Qté</th>${o.photos ? '<th class="l">Photos</th>' : ''}</tr></thead><tbody>
+    ${all.map(({ d, L }) => `<tr><td><b>${nums.get(d.id)}</b></td><td class="l">${esc(L.name)}</td><td class="l">${CATS[d.cat].l}</td><td class="l"><span style="color:${SEV[d.sev].c};font-weight:700">● ${SEV[d.sev].l}</span></td><td class="l">${esc(d.desc)}</td><td class="l">${esc(d.action)}</td><td>${esc(d.qty)} ${d.qty ? esc(d.unit) : ''}</td>${o.photos ? `<td class="l">${d.photos.filter(id => P.photos[id]).slice(0, 3).map(id => `<img src="${P.photos[id]}">`).join('')}</td>` : ''}</tr>`).join('')}
+    </tbody></table></section>`;
+  }
+  return pages;
+}
+function renderReportView() {
+  const o = app.rep;
+  const opt = (k, v, l) => `<option value="${v}" ${String(o[k]) === String(v) ? 'selected' : ''}>${l}</option>`;
+  const chk = (k, l) => `<label class="row"><input type="checkbox" data-in="rep" data-k="${k}" ${o[k] ? 'checked' : ''}> ${l}</label>`;
+  $('#pageView').innerHTML = `<div class="wrap noprint"><h2 style="margin:4px 0">Rapport PDF</h2>
+  <div class="card"><div class="row">
+    <label class="field"><span>Papier</span><select data-in="rep" data-k="paper">${opt('paper', 'A4', 'A4')}${opt('paper', 'A3', 'A3')}</select></label>
+    <label class="field"><span>Orientation</span><select data-in="rep" data-k="orient">${opt('orient', 'landscape', 'Paysage')}${opt('orient', 'portrait', 'Portrait')}</select></label>
+    <label class="field"><span>Échelle des plans</span><select data-in="rep" data-k="scale">${opt('scale', 'auto', 'Automatique')}${SCALES.map(s => opt('scale', s, '1:' + s)).join('')}</select></label>
+  </div><div class="row" style="gap:16px">${chk('plans', 'Plans')}${chk('metres', 'Métrés')}${chk('desordres', 'Désordres')}${chk('photos', 'Photos des désordres')}</div>
+  <div class="row" style="margin-top:10px"><button class="btn pri" data-act="print">🖨️ Imprimer / Enregistrer en PDF</button><button class="btn" data-act="exportSVG">⬇︎ Plan du niveau en SVG</button></div>
+  <p class="hint">Dans la fenêtre d'impression, choisissez « Enregistrer au format PDF » et laissez l'échelle à <b>100 %</b> (pas « Ajuster à la page ») pour que l'échelle 1:50 ou 1:100 soit exacte. La barre d'échelle reste juste dans tous les cas. Sur iPhone : Partager › Imprimer, puis écartez deux doigts sur l'aperçu pour obtenir le PDF.</p></div>
+  <div id="reportRoot">${buildReport()}</div>`;
+}
+
+// ---------- IA : appel à l'API Claude ----------
+const AI_SCHEMA = {
+  type: 'object', additionalProperties: false, required: ['type_image', 'echelle', 'remarques', 'pieces', 'desordres'],
+  properties: {
+    type_image: { type: 'string', enum: ['croquis_ou_plan', 'photo_interieur', 'photo_facade', 'autre'] },
+    echelle: { type: 'string', description: "Comment l'échelle a été déterminée (cotes écrites, éléments de taille standard...) et sa fiabilité." },
+    remarques: { type: 'string', description: 'Incertitudes, éléments illisibles, conseils de mesure sur site.' },
+    pieces: {
+      type: 'array', items: {
+        type: 'object', additionalProperties: false, required: ['nom', 'sommets', 'ouvertures'],
+        properties: {
+          nom: { type: 'string' },
+          sommets: { type: 'array', description: 'Coins intérieurs de la pièce, en mètres, dans l\'ordre du contour. x vers la droite, y vers le bas.', items: { type: 'object', additionalProperties: false, required: ['x', 'y'], properties: { x: { type: 'number' }, y: { type: 'number' } } } },
+          ouvertures: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['type', 'mur', 'position', 'largeur'], properties: { type: { type: 'string', enum: ['porte', 'fenetre', 'baie', 'passage'] }, mur: { type: 'integer', description: 'Index i du mur allant du sommet i au sommet i+1.' }, position: { type: 'number', description: 'Distance en mètres entre le sommet i et le bord le plus proche de l\'ouverture.' }, largeur: { type: 'number' } } } },
+        },
+      },
+    },
+    desordres: {
+      type: 'array', items: {
+        type: 'object', additionalProperties: false, required: ['categorie', 'gravite', 'description', 'action'],
+        properties: { categorie: { type: 'string', enum: Object.keys(CATS) }, gravite: { type: 'integer', description: '1 à surveiller, 2 à réparer, 3 urgent, 4 danger pour les personnes' }, description: { type: 'string' }, action: { type: 'string' } },
+      },
+    },
+  },
+};
+const AI_SYSTEM = `Tu es géomètre-expert et architecte spécialisé dans la réhabilitation de bâtiments anciens aux Seychelles (climat tropical humide, air salin, constructions en blocs de béton, béton armé, toitures en tôle sur charpente bois, termites fréquents).
+On te donne une ou plusieurs images : croquis à main levée, ancien plan, photo d'intérieur ou de façade. Tu prépares une ÉBAUCHE de relevé qui sera ensuite vérifiée au télémètre par un non-spécialiste.
+
+Règles pour les pièces (seulement si l'image montre un plan ou un croquis lisible) :
+- Coordonnées en mètres, x vers la droite, y vers le bas, origine en haut à gauche du bâtiment.
+- Chaque pièce = polygone des faces intérieures des murs, sommets dans l'ordre du contour. Entre deux pièces voisines, laisse l'épaisseur du mur (environ 0,20 m) ; ne superpose jamais deux pièces.
+- Utilise en priorité les cotes écrites. Sinon, déduis l'échelle d'éléments standard (porte 0,80 m, lit double 1,40 m, carreau 0,30 m...) et dis-le dans "echelle".
+- Noms en français courant : Salon, Chambre 1, Cuisine, Salle d'eau, WC, Varangue, Couloir...
+- Ouvertures : "mur" = index i du mur qui va du sommet i au sommet i+1 ; "position" = distance depuis le sommet i jusqu'au bord de l'ouverture.
+
+Règles pour les désordres (photos surtout) : liste uniquement ce qui est réellement visible (fissures, éclatement du béton et fers rouillés, traces d'humidité, moisissures, tôles corrodées, bois attaqué, installations dangereuses...). Gravité : 1 à surveiller, 2 à réparer, 3 urgent, 4 danger pour les personnes. Préconise des travaux concrets adaptés au climat local, en une ou deux phrases simples.
+
+N'invente rien : si tu n'es pas sûr, dis-le dans "remarques" et donne des conseils de mesure sur site. Écris pour un public non spécialiste.`;
+async function callClaude(images, hintText) {
+  const st = app.settings, model = st.model || 'claude-opus-5-5';
+  const content = images.map(f => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: f.data.split(',')[1] } }));
+  content.push({ type: 'text', text: (hintText ? 'Indications du terrain : ' + hintText + '\n\n' : '') + 'Analyse ces images et produis l\'ébauche de relevé.' });
+  const body = { model, max_tokens: 16000, system: AI_SYSTEM, output_config: { effort: 'high', format: { type: 'json_schema', schema: AI_SCHEMA } }, messages: [{ role: 'user', content }] };
+  const headers = { 'content-type': 'application/json', 'x-api-key': st.apiKey, 'anthropic-version': '2026-10-21', 'anthropic-dangerous-direct-browser-access': 'true' };
+  const send = async withFallback => {
+    const b = withFallback ? { ...body, fallbacks: 'default' } : body, h = withFallback ? { ...headers, 'anthropic-beta': 'server-side-fallback-2026-07-01' } : headers;
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: h, body: JSON.stringify(b) });
+    let data = null; try { data = await res.json(); } catch (e) { }
+    return { res, data };
+  };
+  let r;
+  try { r = await send(true); if (r.res.status === 400) r = await send(false); }
+  catch (e) { throw new Error('Pas de connexion à internet, ou accès à l\'API bloqué par le réseau. L\'analyse IA nécessite internet ; le reste de l\'application fonctionne hors ligne.'); }
+  const { res, data } = r;
+  if (!res.ok) {
+    const m = data && data.error && data.error.message || res.statusText;
+    if (res.status === 401) throw new Error('Clé API refusée : vérifiez-la (Menu › Réglages IA).');
+    if (res.status === 429) throw new Error('Trop de requêtes ou crédit épuisé. Réessayez dans une minute ou vérifiez votre crédit sur console.anthropic.com.');
+    if (res.status >= 500) throw new Error('Le service est momentanément surchargé. Réessayez dans quelques instants.');
+    throw new Error('Erreur ' + res.status + ' : ' + m);
+  }
+  if (data.stop_reason === 'refusal') throw new Error('L\'analyse a été refusée pour ces images. Essayez avec une autre image.');
+  if (data.stop_reason === 'max_tokens') throw new Error('Réponse trop longue : essayez avec moins d\'images à la fois.');
+  const txt = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  let out; try { out = JSON.parse(txt); } catch (e) { throw new Error('Réponse illisible. Relancez l\'analyse.'); }
+  out.pieces = (out.pieces || []).filter(p => p.sommets && p.sommets.length >= 3);
+  out.desordres = out.desordres || [];
+  return out;
+}
+async function aiRun() {
+  const a = app.ai; a.busy = true; a.err = null; a.result = null; renderPanel();
+  const t0 = Date.now(), timer = setInterval(() => { const el = $('#aiSec'); if (el) el.textContent = Math.round((Date.now() - t0) / 1000); }, 1000);
+  try { a.result = await callClaude(a.files, a.hint); }
+  catch (e) { a.err = e.message; }
+  clearInterval(timer); a.busy = false; renderPanel();
+}
+function aiApply() {
+  const R = app.ai.result, L = lvl(); if (!R) return;
+  pushUndo();
+  // pièces : on garde la disposition relative proposée et on place l'ensemble à côté de l'existant
+  const allP = R.pieces.flatMap(p => p.sommets);
+  const spot = freeSpot(L), b = allP.length ? bbox(allP) : { minx: 0, miny: 0 }, sh = p => ({ x: p.x - b.minx + spot.x, y: p.y - b.miny + spot.y });
+  const newIds = [];
+  R.pieces.forEach(p => {
+    const pts = p.sommets.map(sh), r = roomFromPts(p.nom || 'Pièce', pts);
+    p.ouvertures.forEach(o => {
+      const n = pts.length, A = pts[((o.mur % n) + n) % n], B = pts[(((o.mur + 1) % n) + n) % n], d = V.norm(V.sub(B, A)), S = V.add(A, V.mul(d, Math.max(0, o.position))), E = V.add(S, V.mul(d, o.largeur || OPEN_T[o.type].w));
+      attachOpeningWorld(r, o.type, S, E);
+    });
+    L.rooms.push(r); newIds.push(r.id);
+  });
+  // désordres : placés en colonne à droite, à glisser à leur emplacement réel
+  const pb = levelBBoxPts(L), bb = pb.length ? bbox(pb) : { maxx: 0, miny: 0 };
+  let photoId = null;
+  if (R.desordres.length && app.ai.files[0]) { photoId = uid(); app.project.photos[photoId] = app.ai.files[0].data; }
+  R.desordres.forEach((d, i) => L.defects.push({ id: uid(), x: bb.maxx + 1.5, y: bb.miny + 0.5 + i * 0.9, cat: CATS[d.categorie] ? d.categorie : 'autre', sev: clamp(d.gravite | 0, 1, 4), desc: d.description, action: d.action, qty: '', unit: 'm²', photos: photoId ? [photoId] : [], place: true, date: new Date().toISOString().slice(0, 10) }));
+  app.ai.result = null; app.ai.files = [];
+  save(); setTool('select'); fitView();
+  toast(`${R.pieces.length} pièce(s) et ${R.desordres.length} désordre(s) ajoutés. Toutes les cotes sont ≈ : mesurez-les sur place.`);
+}
+
+// ---------- Fichiers : images, export, import ----------
+function readImage(file, maxDim = 1600, q = 0.82) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight; const k = Math.min(1, maxDim / Math.max(w, h)); w = Math.round(w * k); h = Math.round(h * k);
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url); res({ data: c.toDataURL('image/jpeg', q), w, h });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Image illisible (format non pris en charge ? Essayez JPEG ou PNG).')); };
+    img.src = url;
+  });
+}
+let fileMode = null;
+function pickFile(mode, accept, multiple) { fileMode = mode; const f = $('#fileIn'); f.value = ''; f.accept = accept; f.multiple = !!multiple; f.click(); }
+$('#fileIn').addEventListener('change', async e => {
+  const files = [...e.target.files]; if (!files.length) return;
+  try {
+    if (fileMode === 'project') return importProject(files[0]);
+    if (fileMode === 'bg') {
+      const im = await readImage(files[0], 2400, 0.85), id = uid(), R = stage.getBoundingClientRect();
+      mutate(() => { app.project.photos[id] = im.data; const w = Math.max(5, R.width / app.view.zoom * 0.7); lvl().bg = { photo: id, natW: im.w, natH: im.h, w, x: app.view.cx - w / 2, y: app.view.cy - w * im.h / im.w / 2, rot: 0, op: 0.6, show: true }; });
+      toast('Image importée. Calibrez maintenant l\'échelle.');
+    }
+    if (fileMode === 'ai') { for (const f of files.slice(0, 4)) app.ai.files.push(await readImage(f, 1568, 0.85)); renderPanel(); }
+    if (fileMode === 'defectPhoto') {
+      const d = selObj(); if (!d) return;
+      const ims = []; for (const f of files.slice(0, 6)) ims.push(await readImage(f, 1280, 0.72));
+      mutate(() => ims.forEach(im => { const id = uid(); app.project.photos[id] = im.data; d.photos.push(id); }));
+    }
+  } catch (err) { toast(err.message); }
+});
+function download(name, data, type) {
+  const blob = data instanceof Blob ? data : new Blob([data], { type }), a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+const safeName = s => (s || 'projet').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 50) || 'projet';
+function gcPhotos(P) {
+  const used = new Set(); P.levels.forEach(L => { if (L.bg) used.add(L.bg.photo); L.defects.forEach(d => d.photos.forEach(id => used.add(id))); });
+  Object.keys(P.photos).forEach(id => { if (!used.has(id)) delete P.photos[id]; });
+}
+function exportProject() {
+  const P = app.project; gcPhotos(P); P.lastExport = Date.now(); save();
+  download(`${safeName(P.name)}_${new Date().toISOString().slice(0, 10)}.lakaz.json`, JSON.stringify(P), 'application/json');
+  toast('Fichier projet enregistré (photos incluses). Gardez-le en lieu sûr ou partagez-le.'); renderPanel();
+}
+async function importProject(file) {
+  let P; try { P = JSON.parse(await file.text()); } catch (e) { return toast('Fichier illisible.'); }
+  if (!P || !Array.isArray(P.levels)) return toast('Ce fichier n\'est pas un projet Lakaz Plan.');
+  P.photos = P.photos || {};
+  const exists = await DB.get(P.id);
+  if (exists && !confirm(`Un projet « ${exists.name} » existe déjà sur cet appareil.\nOK = le remplacer par le fichier\nAnnuler = importer comme copie`)) { P.id = uid(); P.name += ' (copie)'; }
+  await DB.put(P); openProject(P); toast('Projet importé.');
+}
+function exportCSV() {
+  const P = app.project, rows = [['Niveau', 'Pièce', 'Surface sol (m²)', 'Périmètre (m)', 'HSP (m)', 'Murs bruts (m²)', 'Ouvertures (m²)', 'Murs nets (m²)', 'Plinthes (ml)', 'Volume (m³)', 'Cotes estimées']];
+  P.levels.forEach(L => L.rooms.forEach(r => { const m = roomMetrics(r); rows.push([L.name, r.name, fmt(m.A), fmt(m.P), fmt(r.h.v), fmt(m.wallGross), fmt(m.opA), fmt(m.wallNet), fmt(m.plinthe), fmt(m.vol), m.est]); }));
+  rows.push([]); rows.push(['Désordres']); rows.push(['N°', 'Niveau', 'Type', 'Gravité', 'Constat', 'Travaux', 'Quantité', 'Unité']);
+  const nums = defectNumbers(); P.levels.forEach(L => L.defects.forEach(d => rows.push([nums.get(d.id), L.name, CATS[d.cat].l, SEV[d.sev].l, d.desc, d.action, d.qty, d.unit])));
+  const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  download(safeName(P.name) + '_metres.csv', csv, 'text/csv;charset=utf-8');
+}
+function exportSVG() {
+  const L = lvl(), pts = levelBBoxPts(L); if (!pts.length) return toast('Niveau vide.');
+  const b = bbox(pts), s = 100, u = 0.25 * s / 1000, m = 1.5, w = b.maxx - b.minx + 2 * m, h = b.maxy - b.miny + 2 * m;
+  const svgTxt = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${f4(w * 10)}mm" height="${f4(h * 10)}mm" viewBox="${f4(b.minx - m)} ${f4(b.miny - m)} ${f4(w)} ${f4(h)}"><rect x="${f4(b.minx - m)}" y="${f4(b.miny - m)}" width="${f4(w)}" height="${f4(h)}" fill="#fff"/>${svgPlan(L, { u, print: true, dims: true })}</svg>`;
+  download(`${safeName(app.project.name)}_${safeName(L.name)}_1-100.svg`, svgTxt, 'image/svg+xml');
+  toast('Plan exporté en SVG à l\'échelle 1:100 (1 unité = 1 m).');
+}
+
+// ---------- Projets ----------
+async function openProject(P) {
+  P.photos = P.photos || {}; app.project = P; app.levelIdx = 0; app.sel = null; app.undo = []; app.redo = []; app.tab = 'plan'; app.trace = null; app.calib = null;
+  LS.set('last', P.id); ui(); requestAnimationFrame(fitView);
+}
+async function projectsModal() {
+  const list = (await DB.all()).sort((a, b) => b.updated - a.updated);
+  modal(`<button class="close" data-act="closeModal">✕</button><h2>Mes relevés</h2>
+  <div class="row" style="margin-bottom:10px"><button class="btn pri" data-act="newProject">＋ Nouveau relevé</button><button class="btn" data-act="importProject">📂 Ouvrir un fichier projet</button></div>
+  ${list.map(p => `<div class="card row" style="justify-content:space-between"><div><b>${esc(p.name)}</b><div class="hint" style="margin:0">${esc(p.address || '')} · modifié le ${new Date(p.updated).toLocaleDateString('fr-FR')} · ${p.levels.reduce((n, L) => n + L.rooms.length, 0)} pièces</div></div>
+  <div class="row">${p.id === app.project.id ? '<span class="badge b-ok">ouvert</span>' : `<button class="btn sm" data-act="openProj" data-id="${p.id}">Ouvrir</button>`}<button class="btn sm warn" data-act="delProj" data-id="${p.id}">Supprimer</button></div></div>`).join('')}`);
+}
+function projInfoModal() {
+  const P = app.project, f = (k, l, ph = '') => `<label class="field"><span>${l}</span><input data-in="proj" data-k="${k}" value="${esc(P[k])}" placeholder="${ph}"></label>`;
+  modal(`<button class="close" data-act="closeModal">✕</button><h2>Informations du projet</h2>
+  ${f('name', 'Nom du relevé', 'Ex. Maison Hoareau')}${f('address', 'Adresse / district', 'Ex. Anse Boileau, Mahé')}${f('client', 'Propriétaire / client')}${f('author', 'Relevé effectué par')}
+  <label class="field"><span>Date du relevé</span><input type="date" data-in="proj" data-k="date" value="${esc(P.date)}"></label>
+  <label class="field"><span>Orientation du nord : ${P.north || 0}° (aidez-vous de la boussole du téléphone)</span><input type="range" min="-180" max="180" step="5" value="${P.north || 0}" data-in="proj" data-k="north"></label>
+  <label class="field"><span>Observations générales (accès, structure, toiture, réseaux…)</span><textarea data-in="proj" data-k="notes">${esc(P.notes)}</textarea></label>
+  <h4>Niveaux</h4>${P.levels.map((L, i) => `<div class="row" style="margin:4px 0"><input class="num" style="flex:1;text-align:left" data-in="lvlName" data-i="${i}" value="${esc(L.name)}"><button class="btn sm warn" data-act="delLevel" data-i="${i}" ${P.levels.length < 2 ? 'disabled' : ''}>Supprimer</button></div>`).join('')}
+  <div class="row" style="margin-top:12px"><button class="btn pri" data-act="closeModal">Fermer</button></div>`);
+}
+function helpModal() {
+  modal(`<button class="close" data-act="closeModal">✕</button><h2>🏝️ Lakaz Plan : mode d'emploi</h2>
+  <p>Lakaz Plan sert à faire le <b>relevé d'un bâtiment existant</b> (maison, appartement, immeuble) avant rénovation : un plan coté, la liste des désordres avec photos et les quantités pour chiffrer les travaux.</p>
+  <div class="msg warn"><b>À savoir :</b> une photo ou un croquis ne donne jamais des cotes exactes. Ils servent d'ébauche. La précision vient des <b>mesures prises sur place</b>. Le plan affiche « ≈ » en orange tant qu'une cote n'est pas mesurée.</div>
+  <h4>Matériel</h4>
+  <ul><li><b>Télémètre laser</b> (environ 30 €) : le plus simple et précis au centimètre. Sinon un mètre ruban de 5 m.</li>
+  <li><b>iPhone Pro</b> : l'application <i>Mesures</i> d'Apple, déjà installée, utilise le capteur LiDAR. Visez un coin, puis l'autre. Précision de 1 à 2 cm.</li>
+  <li>Un téléphone pour les photos des désordres.</li></ul>
+  <h4>Les 4 étapes</h4>
+  <ol><li><b>Ébauche</b> : ajoutez les pièces une à une (➕), ou importez un croquis en fond (🖼️) et tracez dessus (✏️), ou laissez l'IA lire le croquis (✨).</li>
+  <li><b>Mesures</b> : pour chaque pièce, mesurez les murs <i>et les diagonales</i>. La diagonale est indispensable : dans un vieux bâtiment, les angles ne sont presque jamais droits, et c'est elle qui permet de dessiner la forme exacte. La diagonale de contrôle vérifie qu'aucune mesure n'est fausse.</li>
+  <li><b>Assemblage</b> : faites glisser les pièces. Elles s'aimantent les unes aux autres en laissant l'épaisseur du mur.</li>
+  <li><b>Ouvertures, désordres, rapport</b> : placez portes et fenêtres, signalez les désordres avec photos, puis éditez le rapport PDF.</li></ol>
+  <h4>Vos données</h4>
+  <p>Tout reste sur cet appareil, sans compte ni serveur. Pensez à <b>sauvegarder le fichier projet</b> (Menu) régulièrement : c'est votre copie de sécurité, et c'est ce fichier qu'on envoie à un collègue ou à l'architecte (WhatsApp, e-mail, clé USB). Sur iPhone, Safari peut effacer les données d'un site non utilisé pendant plusieurs semaines si l'application n'a pas été ajoutée à l'écran d'accueil.</p>
+  <h4>Raccourcis (ordinateur)</h4><p class="hint">Molette : zoom · glisser le fond : déplacer la vue · Suppr : supprimer la sélection · Ctrl+Z / Ctrl+Y : annuler / rétablir · Échap : annuler l'action en cours.</p>
+  <div class="row"><button class="btn pri" data-act="closeModal">C'est parti</button></div>`);
+}
+function settingsModal() {
+  const st = app.settings;
+  modal(`<button class="close" data-act="closeModal">✕</button><h2>Réglages IA</h2>
+  <p class="hint">L'analyse IA est facultative. Elle envoie les images choisies à l'API d'Anthropic (Claude) et nécessite internet et une clé API personnelle, facturée à l'usage.</p>
+  <label class="field"><span>Clé API</span><input type="password" id="keyIn2" value="${esc(st.apiKey)}" placeholder="sk-ant-..."></label>
+  <label class="field"><span>Modèle</span><select id="modelIn"><option value="claude-opus-5-5" ${st.model === 'claude-opus-5-5' ? 'selected' : ''}>Claude Opus 5.5 (le plus précis)</option><option value="claude-sonnet-5-5" ${st.model === 'claude-sonnet-5-5' ? 'selected' : ''}>Claude Sonnet 5.5 (moins cher)</option></select></label>
+  <div class="row"><button class="btn pri" data-act="saveSettings">Enregistrer</button><button class="btn" data-act="closeModal">Annuler</button></div>`);
+}
+function modal(html) { $('#mbox').innerHTML = html; $('#modal').classList.remove('hidden'); }
+function closeModal() { $('#modal').classList.add('hidden'); $('#mbox').innerHTML = ''; }
+$('#modal').addEventListener('pointerdown', e => { if (e.target.id === 'modal') closeModal(); });
+let toastT = null;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3800); }
+function menu() {
+  const m = $('#menuPop'); if (!m.classList.contains('hidden')) return m.classList.add('hidden');
+  m.innerHTML = `<button data-act="projects">📁 Mes relevés</button><button data-act="projInfo">📝 Informations du projet</button><hr>
+  <button data-act="exportProject">💾 Sauvegarder le fichier projet</button><button data-act="importProject">📂 Ouvrir un fichier projet</button><hr>
+  <button data-act="tab" data-v="rapport">🖨️ Rapport PDF</button><button data-act="exportCSV">📊 Métrés pour Excel (CSV)</button><button data-act="exportSVG">📐 Plan en SVG (1:100)</button><hr>
+  <button data-act="settings">✨ Réglages IA</button><button data-act="help">❓ Mode d'emploi</button>`;
+  m.classList.remove('hidden');
+}
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#menuPop') && !e.target.closest('#menuBtn')) $('#menuPop').classList.add('hidden'); });
+function viewPhoto(src) { const v = document.createElement('div'); v.id = 'viewer'; v.innerHTML = `<img src="${src}">`; v.onclick = () => v.remove(); document.body.appendChild(v); }
+
+// ---------- Actions (boutons) ----------
+const ACT = {
+  tab: el => { $('#menuPop').classList.add('hidden'); app.tab = el.dataset.v; ui(); if (app.tab === 'plan') requestAnimationFrame(() => { updateViewBox(); draw(); }); },
+  tool: el => { closeModal(); if (app.tab !== 'plan') { app.tab = 'plan'; } setTool(el.dataset.v); },
+  undo, redo, menu, help: () => { $('#menuPop').classList.add('hidden'); helpModal(); },
+  projects: () => { $('#menuPop').classList.add('hidden'); projectsModal(); },
+  projInfo: () => { $('#menuPop').classList.add('hidden'); projInfoModal(); },
+  settings: () => { $('#menuPop').classList.add('hidden'); settingsModal(); },
+  closeModal, zoomIn: () => zoomAt(1.3), zoomOut: () => zoomAt(1 / 1.3), fit: fitView,
+  panelToggle: () => { app.panelOpen = !app.panelOpen; renderPanel(); },
+  cancelPanel: () => { app.panelMode = null; ui(); },
+  addLevel: () => { const n = prompt('Nom du nouveau niveau :', 'Étage ' + app.project.levels.length); if (!n) return; mutate(() => { app.project.levels.push(newLevel(n)); app.levelIdx = app.project.levels.length - 1; app.sel = null; }); fitView(); },
+  delLevel: el => { const i = +el.dataset.i, L = app.project.levels[i]; if (!confirm(`Supprimer le niveau « ${L.name} » et tout son contenu ?`)) return; mutate(() => { app.project.levels.splice(i, 1); app.levelIdx = 0; app.sel = null; }); projInfoModal(); },
+  newRoomName: el => { $('#newRoomName').value = el.dataset.v + ' ' + (lvl().rooms.length + 1); },
+  createRoom: el => {
+    const name = ($('#newRoomName').value || 'Pièce').trim(), r = templateRoom(el.dataset.v, name);
+    placeRoom(r, freeSpot(lvl())); app.panelMode = null; mutate(() => lvl().rooms.push(r));
+    selectObj({ kind: 'room', id: r.id }); fitView();
+    setTimeout(() => { const i = $('#panelBody input.num'); if (i && window.innerWidth > 820) i.focus(); }, 50);
+  },
+  selRoom: el => { if (app.tab !== 'plan') { app.tab = 'plan'; ui(); } selectObj({ kind: 'room', id: el.dataset.id }); },
+  selDefect: el => selectObj({ kind: 'defect', id: el.dataset.id }),
+  selOpening: el => selectObj({ kind: 'opening', id: el.dataset.id }),
+  setRoomName: el => { const r = selObj(); mutate(() => { const same = lvl().rooms.filter(x => x !== r && x.name.startsWith(el.dataset.v)).length; r.name = el.dataset.v + (['Chambre', 'Salle d\'eau', 'WC'].includes(el.dataset.v) && same ? ' ' + (same + 1) : ''); }); },
+  rot: el => { const r = selObj(); mutate(() => rotateRoom(r, +el.dataset.v), false); },
+  toPoly: () => { const r = selObj(); mutate(() => rectToPoly(r)); toast('Mesurez maintenant les 4 murs et la diagonale d1.'); },
+  toRect: () => { const r = selObj(); if (!confirm('Revenir au rectangle ? Seuls les murs A et B seront conservés.')) return; mutate(() => { r.rect = { L: r.poly.sides[0], W: r.poly.sides[1], D: M(0) }; r.mode = 'rect'; r.poly = null; }); },
+  dupRoom: () => { const r = selObj(), c = JSON.parse(JSON.stringify(r)); c.id = uid(); c.name = r.name + ' (copie)'; c.openings.forEach(o => o.id = uid()); placeRoom(c, freeSpot(lvl())); mutate(() => lvl().rooms.push(c)); selectObj({ kind: 'room', id: c.id }); },
+  delRoom: () => { const r = selObj(); if (!confirm(`Supprimer « ${r.name} » ?`)) return; mutate(() => { lvl().rooms = lvl().rooms.filter(x => x !== r); app.sel = null; }); },
+  addOpening: el => {
+    const r = selObj(), type = el.dataset.v, T0 = OPEN_T[type], W = worldPts(r), L0 = V.dist(W[0], W[1]), w = Math.min(T0.w, L0 * 0.9);
+    const op = { id: uid(), type, wall: 0, off: r2((L0 - w) / 2), w, h: T0.h, sill: T0.sill, swing: 'in', hinge: 'L' };
+    mutate(() => r.openings.push(op)); selectObj({ kind: 'opening', id: op.id });
+  },
+  opType: el => { const { o } = selObj(), T0 = OPEN_T[el.dataset.v]; mutate(() => { o.type = el.dataset.v; o.h = T0.h; o.sill = T0.sill; if (el.dataset.v === 'baie' && o.w < 1.2) o.w = T0.w; }); },
+  opSet: el => { const { o } = selObj(); mutate(() => { o[el.dataset.k] = el.dataset.v; }); },
+  delOpening: () => { const { r, o } = selObj(); mutate(() => { r.openings = r.openings.filter(x => x !== o); app.sel = { kind: 'room', id: r.id }; }); },
+  dfSev: el => { const d = selObj(); mutate(() => { d.sev = +el.dataset.v; }); },
+  delDefect: () => { const d = selObj(); if (!confirm('Supprimer ce désordre ?')) return; mutate(() => { lvl().defects = lvl().defects.filter(x => x !== d); app.sel = null; }); },
+  addDefectPhoto: () => pickFile('defectPhoto', 'image/*', true),
+  delPhoto: el => { const d = selObj(); mutate(() => { d.photos = d.photos.filter(id => id !== el.dataset.id); }); },
+  viewPhoto: el => viewPhoto(app.project.photos[el.dataset.id]),
+  gotoDefect: el => { app.levelIdx = +el.dataset.li; app.tab = 'plan'; app.tool = 'select'; ui(); selectObj({ kind: 'defect', id: el.dataset.id }); },
+  finishTrace, traceUndo: () => { app.trace.pts.pop(); draw(); renderPanel(); },
+  importBg: () => pickFile('bg', 'image/*'),
+  calib: () => { app.calib = { pts: [], hover: null }; hint(); toast('Touchez 2 points sur l\'image dont vous connaissez la distance réelle.'); if (window.innerWidth <= 820) { app.panelOpen = false; renderPanel(); } },
+  delBg: () => { if (!confirm('Retirer l\'image de fond ?')) return; mutate(() => { lvl().bg = null; }); },
+  saveKey: () => { const k = $('#keyIn').value.trim(); if (!k.startsWith('sk-')) return toast('Clé invalide : elle commence par sk-ant-'); app.settings.apiKey = k; LS.set('settings', app.settings); renderPanel(); toast('Clé enregistrée sur cet appareil.'); },
+  forgetKey: () => { if (!confirm('Effacer la clé API de cet appareil ?')) return; app.settings.apiKey = ''; LS.set('settings', app.settings); renderPanel(); },
+  saveSettings: () => { app.settings.apiKey = $('#keyIn2').value.trim(); app.settings.model = $('#modelIn').value; LS.set('settings', app.settings); closeModal(); toast('Réglages enregistrés.'); if (app.tool === 'ai') renderPanel(); },
+  aiAddFile: () => pickFile('ai', 'image/*', true),
+  aiDelFile: el => { app.ai.files.splice(+el.dataset.v, 1); renderPanel(); },
+  aiRun, aiApply, aiClear: () => { app.ai.result = null; app.ai.err = null; renderPanel(); },
+  exportProject: () => { $('#menuPop').classList.add('hidden'); exportProject(); },
+  importProject: () => { $('#menuPop').classList.add('hidden'); closeModal(); pickFile('project', '.json,application/json'); },
+  exportCSV: () => { $('#menuPop').classList.add('hidden'); exportCSV(); },
+  exportSVG: () => { $('#menuPop').classList.add('hidden'); exportSVG(); },
+  print: () => { renderReportView(); setTimeout(() => window.print(), 300); },
+  newProject: async () => { const n = prompt('Nom du nouveau relevé :', 'Relevé ' + new Date().toLocaleDateString('fr-FR')); if (!n) return; const P = newProject(n); await DB.put(P); closeModal(); openProject(P); },
+  openProj: async el => { const P = await DB.get(el.dataset.id); closeModal(); if (P) openProject(P); },
+  delProj: async el => {
+    const P = await DB.get(el.dataset.id); if (!P || !confirm(`Supprimer définitivement « ${P.name} » de cet appareil ?\n(Pensez à sauvegarder le fichier projet avant.)`)) return;
+    await DB.del(P.id);
+    if (P.id === app.project.id) { const rest = (await DB.all()).sort((a, b) => b.updated - a.updated); const next = rest[0] || newProject(); if (!rest[0]) await DB.put(next); openProject(next); }
+    projectsModal();
+  },
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el || el.disabled) return;
+  const f = ACT[el.dataset.act]; if (f) { e.preventDefault(); f(el, e); }
+});
+
+// ---------- Saisies (champs) ----------
+document.addEventListener('focusin', e => {
+  const el = e.target.closest('[data-in]'); if (!el) return; app.pendingSnap = snap();
+  if (el.dataset.in === 'meas') { app.hl = el.dataset.k; document.querySelectorAll('.mf').forEach(m => m.classList.toggle('hl', m.dataset.key === app.hl)); const sc = $('#schem'); if (sc) sc.innerHTML = schematic(selObj()); draw(); }
+});
+document.addEventListener('focusout', e => {
+  const el = e.target.closest('[data-in="meas"]'); if (!el) return;
+  setTimeout(() => { if (!document.activeElement || !document.activeElement.closest('[data-in="meas"]')) { app.hl = null; document.querySelectorAll('.mf.hl').forEach(m => m.classList.remove('hl')); const sc = $('#schem'), r = selObj(); if (sc && r && app.sel.kind === 'room') sc.innerHTML = schematic(r); draw(); } }, 10);
+});
+document.addEventListener('change', e => {
+  const el = e.target.closest('[data-in]'); if (!el) return;
+  if (app.pendingSnap && app.pendingSnap !== snap()) pushUndo(app.pendingSnap); app.pendingSnap = null;
+  const k = el.dataset.in;
+  if (k === 'level') { app.levelIdx = +el.value; app.sel = null; app.trace = null; ui(); fitView(); }
+  if (['op', 'df', 'bg', 'bgShow', 'traceOrtho', 'rep', 'aiModel', 'lvlName'].includes(k)) onInput(el, true);
+  if (k === 'meas' || k === 'roomT') { const r = selObj(); if (r) { const i = el.dataset.k && getMeas(r, el.dataset.k); if (i && i.v > 0) el.value = fmt(i.v); } }
+});
+document.addEventListener('input', e => { const el = e.target.closest('[data-in]'); if (el && el.tagName !== 'SELECT' && el.type !== 'checkbox') onInput(el, false); });
+let cmWarned = false;
+function onInput(el, committed) {
+  const k = el.dataset.in, key = el.dataset.k;
+  if (k === 'meas') {
+    const r = selObj(), o = getMeas(r, key); if (!o) return;
+    let v = parseNum(el.value);
+    if (el.value.trim() === '') { o.m = false; }
+    else if (v > 0) {
+      if (v > 60 && key !== 'h') { v = v / 100; if (!cmWarned) { toast('Valeur lue en centimètres : ' + fmt(v) + ' m'); cmWarned = true; } }
+      if (key === 'h' && v > 12) v = v / 100;
+      o.v = v; o.m = true;
+    } else return;
+    const st = document.querySelector(`[data-st="${key}"]`); if (st) { st.className = 'st ' + (o.m ? 'ok' : 'est'); st.textContent = o.m ? '✓ mesuré' : (o.v > 0 ? '≈ estimé' : 'à mesurer'); }
+    $('#roomDerived').innerHTML = roomDerived(r); const sc = $('#schem'); if (sc) sc.innerHTML = schematic(r);
+    save(); draw(); return;
+  }
+  if (k === 'roomName') { const r = selObj(); r.name = el.value; $('#panelHandle').textContent = r.name; save(); draw(); return; }
+  if (k === 'roomT') { const r = selObj(), v = parseNum(el.value); if (v > 0 && v < 1.5) { r.t = v; save(); draw(); } return; }
+  if (k === 'op') {
+    const { r, o } = selObj(); if (key === 'wall') { o.wall = +el.value; o.off = 0; save(); draw(); if (committed) renderPanel(); return; }
+    const v = parseNum(el.value); if (!(v >= 0)) return; o[key] = v; save(); draw(); return;
+  }
+  if (k === 'df') { const d = selObj(); d[key] = el.value; save(); if (committed && key === 'cat') renderPanel(); return; }
+  if (k === 'bg') { const b = lvl().bg; const v = parseNum(el.value); if (!(v > -1000)) return; if (key === 'w') { if (v > 0) b.w = v; } else b[key] = v; renderBg(); save(); if (committed) renderPanel(); return; }
+  if (k === 'bgShow') { lvl().bg.show = el.checked; renderBg(); save(); draw(); return; }
+  if (k === 'traceOrtho') { app.trace.ortho = el.checked; return; }
+  if (k === 'aiHint') { app.ai.hint = el.value; return; }
+  if (k === 'aiModel') { app.settings.model = el.value; LS.set('settings', app.settings); return; }
+  if (k === 'rep') { app.rep[key] = el.type === 'checkbox' ? el.checked : el.value; renderReportView(); return; }
+  if (k === 'proj') { const P = app.project; P[key] = key === 'north' ? +el.value : el.value; save(); ui(); if (key === 'north') { const s = el.closest('.field').querySelector('span'); s.textContent = `Orientation du nord : ${P.north}° (aidez-vous de la boussole du téléphone)`; } return; }
+  if (k === 'lvlName') { app.project.levels[+el.dataset.i].name = el.value; save(); ui(); return; }
+}
+
+// ---------- Clavier ----------
+document.addEventListener('keydown', e => {
+  const typing = e.target.closest('input,textarea,select');
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y' && !typing) { e.preventDefault(); redo(); return; }
+  if (typing) { if (e.key === 'Enter' && e.target.matches('input.num')) { const all = [...document.querySelectorAll('#panelBody input.num')], i = all.indexOf(e.target); if (all[i + 1]) all[i + 1].focus(); else e.target.blur(); e.preventDefault(); } return; }
+  if (e.key === 'Escape') { if (!$('#modal').classList.contains('hidden')) return closeModal(); if (app.calib) { app.calib = null; hint(); draw(); return; } if (app.trace && app.trace.pts.length) { app.trace.pts.pop(); draw(); renderPanel(); return; } setTool('select'); selectObj(null); }
+  if (e.key === 'Enter' && app.trace) finishTrace();
+  if ((e.key === 'Delete' || e.key === 'Backspace') && app.sel) { e.preventDefault(); ({ room: ACT.delRoom, defect: ACT.delDefect, opening: ACT.delOpening })[app.sel.kind](); }
+});
+window.addEventListener('resize', () => { updateViewBox(); draw(); });
+window.addEventListener('beforeprint', () => { if (app.tab !== 'rapport') { app.tab = 'rapport'; ui(); } });
+
+// ---------- Démarrage ----------
+(async function init() {
+  const ok = await DB.open();
+  if (!ok) setTimeout(() => toast('Stockage local indisponible : sauvegardez le fichier projet avant de fermer la page.'), 800);
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) { }
+  let P = null; const last = LS.get('last', null);
+  if (last) P = await DB.get(last);
+  if (!P) { const all = await DB.all(); P = all.sort((a, b) => b.updated - a.updated)[0]; }
+  const first = !P;
+  if (!P) { P = newProject('Mon premier relevé'); await DB.put(P); }
+  openProject(P);
+  if (first) helpModal();
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
+})();
+</script>
+</body>
+</html>

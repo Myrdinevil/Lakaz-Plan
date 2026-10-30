@@ -1,0 +1,10 @@
+{
+  "name": "Lakaz Plan · relevé de bâtiment",
+  "short_name": "Lakaz Plan",
+  "lang": "fr",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eef2f3",
+  "theme_color": "#0f5d6b",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
